@@ -42,7 +42,7 @@ export const api = {
       body: JSON.stringify({ message, sessionId }),
     });
     if (!res.ok) throw new Error(`Chat error: ${res.status}`);
-    return res.json() as Promise<{ response: string; queriesExecuted: number; elapsed: number }>;
+    return res.json() as Promise<{ response: string; queriesExecuted: number; elapsed: number; sqlQueries?: { sql: string; purpose: string }[] }>;
   },
   resetChat: (sessionId = 'default') =>
     fetch(`${API_BASE}/reset`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId }) }),

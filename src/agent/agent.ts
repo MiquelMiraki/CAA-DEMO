@@ -92,10 +92,15 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface SqlQuery {
+  sql: string;
+  purpose: string;
+}
+
 export async function chat(
   userMessage: string,
   conversationHistory: ChatMessage[] = [],
-): Promise<{ response: string; history: ChatMessage[]; queriesExecuted: number }> {
+): Promise<{ response: string; history: ChatMessage[]; queriesExecuted: number; sqlQueries: SqlQuery[] }> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error('OPENAI_API_KEY is not set');
 
@@ -114,6 +119,7 @@ export async function chat(
   ];
 
   let queriesExecuted = 0;
+  const sqlQueries: SqlQuery[] = [];
 
   // Agentic loop: GPT calls tools, we execute them, repeat until GPT gives final answer
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
@@ -139,6 +145,9 @@ export async function chat(
         const fn = toolCall.function;
         const args = JSON.parse(fn.arguments);
         console.log(`  [Tool] ${fn.name}: ${args.purpose || JSON.stringify(args).slice(0, 100)}`);
+        if (fn.name === 'execute_sql') {
+          sqlQueries.push({ sql: args.sql, purpose: args.purpose || '' });
+        }
         const result = await handleToolCall(fn.name, args);
         queriesExecuted++;
 
@@ -158,7 +167,7 @@ export async function chat(
         { role: 'assistant', content: textContent },
       ];
 
-      return { response: textContent, history: updatedHistory, queriesExecuted };
+      return { response: textContent, history: updatedHistory, queriesExecuted, sqlQueries };
     }
   }
 

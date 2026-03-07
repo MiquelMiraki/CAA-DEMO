@@ -44,6 +44,7 @@ app.post('/api/chat', async (req, res) => {
     res.json({
       response: result.response,
       queriesExecuted: result.queriesExecuted,
+      sqlQueries: result.sqlQueries,
       elapsed: parseFloat(elapsed),
     });
   } catch (err) {

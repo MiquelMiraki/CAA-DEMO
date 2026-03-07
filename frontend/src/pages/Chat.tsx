@@ -1,7 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { api } from '../api/client';
-import { Send, RotateCcw, Database, Clock } from 'lucide-react';
+import { Send, RotateCcw, Database, Clock, ChevronDown, ChevronRight } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+
+interface SqlQuery {
+  sql: string;
+  purpose: string;
+}
 
 interface Message {
   id: string;
@@ -9,6 +14,7 @@ interface Message {
   content: string;
   queries?: number;
   elapsed?: number;
+  sqlQueries?: SqlQuery[];
   timestamp: Date;
 }
 
@@ -25,6 +31,7 @@ export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [expandedQueries, setExpandedQueries] = useState<Set<string>>(new Set());
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -54,6 +61,7 @@ export default function Chat() {
         content: result.response,
         queries: result.queriesExecuted,
         elapsed: result.elapsed,
+        sqlQueries: result.sqlQueries,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, assistantMsg]);
@@ -143,18 +151,48 @@ export default function Chat() {
 
               {/* Metadata row for AI messages */}
               {msg.role === 'assistant' && (msg.queries != null || msg.elapsed != null) && (
-                <div className="flex items-center gap-4 mt-2 ml-1">
-                  {msg.queries != null && (
-                    <span className="flex items-center gap-1 text-[#4A4A4A] text-xs">
-                      <Database className="w-3 h-3" />
-                      {msg.queries} queries
-                    </span>
-                  )}
-                  {msg.elapsed != null && (
-                    <span className="flex items-center gap-1 text-[#4A4A4A] text-xs">
-                      <Clock className="w-3 h-3" />
-                      {msg.elapsed}s
-                    </span>
+                <div className="mt-2 ml-1">
+                  <div className="flex items-center gap-4">
+                    {msg.queries != null && msg.sqlQueries && msg.sqlQueries.length > 0 ? (
+                      <button
+                        onClick={() => {
+                          setExpandedQueries((prev) => {
+                            const next = new Set(prev);
+                            next.has(msg.id) ? next.delete(msg.id) : next.add(msg.id);
+                            return next;
+                          });
+                        }}
+                        className="flex items-center gap-1 text-[#4A4A4A] hover:text-[#C8A84E] text-xs transition-colors cursor-pointer"
+                      >
+                        <Database className="w-3 h-3" />
+                        {msg.queries} {msg.queries === 1 ? 'query' : 'queries'}
+                        {expandedQueries.has(msg.id) ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                      </button>
+                    ) : msg.queries != null ? (
+                      <span className="flex items-center gap-1 text-[#4A4A4A] text-xs">
+                        <Database className="w-3 h-3" />
+                        {msg.queries} {msg.queries === 1 ? 'query' : 'queries'}
+                      </span>
+                    ) : null}
+                    {msg.elapsed != null && (
+                      <span className="flex items-center gap-1 text-[#4A4A4A] text-xs">
+                        <Clock className="w-3 h-3" />
+                        {msg.elapsed}s
+                      </span>
+                    )}
+                  </div>
+                  {/* Expanded SQL queries */}
+                  {expandedQueries.has(msg.id) && msg.sqlQueries && (
+                    <div className="mt-2 space-y-2">
+                      {msg.sqlQueries.map((q, i) => (
+                        <div key={i} className="bg-[#0A0A0A] border border-[#1A1A1A] rounded-lg p-3">
+                          {q.purpose && (
+                            <p className="text-[#808080] text-[11px] mb-1.5">{q.purpose}</p>
+                          )}
+                          <pre className="text-[#C8A84E] text-xs font-mono whitespace-pre-wrap break-all leading-relaxed">{q.sql}</pre>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               )}

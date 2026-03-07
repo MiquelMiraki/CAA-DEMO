@@ -128,12 +128,11 @@ export default function Dashboard() {
                 data={pieData}
                 cx="50%"
                 cy="50%"
-                innerRadius={60}
-                outerRadius={100}
+                innerRadius={55}
+                outerRadius={90}
                 paddingAngle={4}
                 dataKey="value"
-                label={({ name, percent }: any) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
-                labelLine={{ stroke: '#4A4A4A' }}
+                label={false}
               >
                 {pieData?.map((entry: any, i: number) => (
                   <Cell key={i} fill={entry.color} />
@@ -142,6 +141,21 @@ export default function Dashboard() {
               <Tooltip content={<ChartTooltip />} />
             </PieChart>
           </ResponsiveContainer>
+          <div className="flex flex-col gap-2 mt-2">
+            {pieData?.map((entry: any) => {
+              const total = pieData.reduce((s: number, e: any) => s + e.value, 0);
+              const pct = total > 0 ? ((entry.value / total) * 100).toFixed(0) : '0';
+              return (
+                <div key={entry.name} className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: entry.color }} />
+                    <span className="text-[#808080]">{entry.name}</span>
+                  </div>
+                  <span className="text-white font-medium">{pct}% · {fmtMoney(entry.value)}</span>
+                </div>
+              );
+            })}
+          </div>
         </ChartCard>
       </div>
 
