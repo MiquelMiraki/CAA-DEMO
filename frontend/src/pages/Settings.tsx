@@ -1,12 +1,30 @@
 import { useState } from 'react';
 import { Eye, EyeOff, CheckCircle, AlertCircle, Save, RefreshCw } from 'lucide-react';
 
+/* ── Design tokens ─────────────────────────────────────────────── */
+const colors = {
+  bg:        '#000000',
+  surface:   '#0A0A0A',
+  border:    '#1A1A1A',
+  gold:      '#C8A84E',
+  secondary: '#808080',
+  muted:     '#4A4A4A',
+} as const;
+
+/* ── Platform definitions ──────────────────────────────────────── */
+interface PlatformField {
+  key: string;
+  label: string;
+  placeholder: string;
+  secret?: boolean;
+}
+
 interface PlatformConfig {
   id: string;
   name: string;
   logo: string;
   color: string;
-  fields: { key: string; label: string; placeholder: string; secret?: boolean }[];
+  fields: PlatformField[];
 }
 
 const PLATFORMS: PlatformConfig[] = [
@@ -85,6 +103,7 @@ const PLATFORMS: PlatformConfig[] = [
 
 type ConnectionStatus = 'idle' | 'testing' | 'connected' | 'error';
 
+/* ── Component ─────────────────────────────────────────────────── */
 export default function Settings() {
   const [configs, setConfigs] = useState<Record<string, Record<string, string>>>({});
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
@@ -104,7 +123,6 @@ export default function Settings() {
 
   const testConnection = (platformId: string) => {
     setStatuses((prev) => ({ ...prev, [platformId]: 'testing' }));
-    // Simulated connection test
     setTimeout(() => {
       const hasValues = Object.values(configs[platformId] || {}).some((v) => v.length > 0);
       setStatuses((prev) => ({ ...prev, [platformId]: hasValues ? 'connected' : 'error' }));
@@ -112,7 +130,6 @@ export default function Settings() {
   };
 
   const saveConfig = (platformId: string) => {
-    // In production, this would POST to the backend
     console.log(`Saving config for ${platformId}:`, configs[platformId]);
     testConnection(platformId);
   };
@@ -139,20 +156,33 @@ export default function Settings() {
         );
       default:
         return (
-          <span className="text-xs text-white/30">Not configured</span>
+          <span className="text-xs" style={{ color: colors.muted }}>
+            Not configured
+          </span>
         );
     }
   };
 
+  /* ── Shared input classes ────────────────────────────────────── */
+  const inputClasses =
+    'w-full rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#4A4A4A] focus:outline-none transition-colors';
+  const inputStyle = {
+    background: colors.surface,
+    border: `1px solid ${colors.border}`,
+  };
+  const inputFocusStyle = `focus:border-[${colors.gold}]/50 focus:ring-1 focus:ring-[${colors.gold}]/20`;
+
   return (
     <div className="space-y-6 max-w-3xl">
+      {/* ── Header ─────────────────────────────────────────────── */}
       <div>
         <h2 className="text-white text-xl font-semibold">Platform Connections</h2>
-        <p className="text-white/40 text-sm mt-1">
-          Connect your marketing platforms to start syncing data automatically.
+        <p style={{ color: colors.secondary }} className="text-sm mt-1">
+          Connect your marketing platforms to sync data automatically.
         </p>
       </div>
 
+      {/* ── Platform cards ─────────────────────────────────────── */}
       <div className="space-y-3">
         {PLATFORMS.map((platform) => {
           const isExpanded = expandedPlatform === platform.id;
@@ -161,12 +191,13 @@ export default function Settings() {
           return (
             <div
               key={platform.id}
-              className="bg-white/[0.03] border border-white/5 rounded-xl overflow-hidden"
+              className="rounded-xl overflow-hidden"
+              style={{ background: colors.surface, border: `1px solid ${colors.border}` }}
             >
-              {/* Header */}
+              {/* Card header */}
               <button
                 onClick={() => setExpandedPlatform(isExpanded ? null : platform.id)}
-                className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/[0.02] transition-colors"
+                className="w-full flex items-center justify-between px-5 py-4 transition-colors hover:bg-white/[0.02]"
               >
                 <div className="flex items-center gap-3">
                   <div
@@ -177,14 +208,19 @@ export default function Settings() {
                   </div>
                   <div className="text-left">
                     <p className="text-white text-sm font-medium">{platform.name}</p>
-                    <p className="text-white/30 text-xs">{platform.fields.length} fields required</p>
+                    <p style={{ color: colors.muted }} className="text-xs">
+                      {platform.fields.length} fields required
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   {getStatusBadge(status)}
                   <svg
-                    className={`w-4 h-4 text-white/30 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                    style={{ color: colors.muted }}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -193,26 +229,32 @@ export default function Settings() {
 
               {/* Expanded form */}
               {isExpanded && (
-                <div className="px-5 pb-5 border-t border-white/5">
+                <div className="px-5 pb-5" style={{ borderTop: `1px solid ${colors.border}` }}>
                   <div className="space-y-3 mt-4">
                     {platform.fields.map((field) => {
                       const secretKey = `${platform.id}_${field.key}`;
                       const isVisible = !field.secret || showSecrets[secretKey];
                       return (
                         <div key={field.key}>
-                          <label className="block text-white/50 text-xs mb-1.5">{field.label}</label>
+                          <label className="block text-xs mb-1.5" style={{ color: colors.secondary }}>
+                            {field.label}
+                          </label>
                           <div className="relative">
                             <input
                               type={isVisible ? 'text' : 'password'}
                               placeholder={field.placeholder}
                               value={configs[platform.id]?.[field.key] || ''}
                               onChange={(e) => updateField(platform.id, field.key, e.target.value)}
-                              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 transition-colors"
+                              className={`${inputClasses} ${inputFocusStyle}`}
+                              style={inputStyle}
                             />
                             {field.secret && (
                               <button
                                 onClick={() => toggleSecret(secretKey)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                                style={{ color: colors.muted }}
+                                onMouseEnter={(e) => (e.currentTarget.style.color = colors.secondary)}
+                                onMouseLeave={(e) => (e.currentTarget.style.color = colors.muted)}
                               >
                                 {isVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                               </button>
@@ -222,17 +264,25 @@ export default function Settings() {
                       );
                     })}
                   </div>
+
+                  {/* Action buttons */}
                   <div className="flex gap-3 mt-5">
                     <button
                       onClick={() => saveConfig(platform.id)}
-                      className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm text-white font-medium transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-black font-medium transition-colors hover:brightness-110"
+                      style={{ background: colors.gold }}
                     >
                       <Save className="w-4 h-4" />
-                      Save & Test
+                      Save &amp; Test
                     </button>
                     <button
                       onClick={() => testConnection(platform.id)}
-                      className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-white/70 transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors hover:bg-white/[0.06]"
+                      style={{
+                        background: 'transparent',
+                        border: `1px solid ${colors.border}`,
+                        color: colors.secondary,
+                      }}
                     >
                       <RefreshCw className="w-4 h-4" />
                       Test Connection
@@ -245,14 +295,18 @@ export default function Settings() {
         })}
       </div>
 
-      {/* Data Sync Section */}
-      <div className="bg-white/[0.03] border border-white/5 rounded-xl p-5">
+      {/* ── Data Sync Schedule ─────────────────────────────────── */}
+      <div className="rounded-xl p-5" style={{ background: colors.surface, border: `1px solid ${colors.border}` }}>
         <h3 className="text-white text-sm font-medium mb-1">Data Sync Schedule</h3>
-        <p className="text-white/40 text-xs mb-4">Configure how often data is pulled from connected platforms.</p>
+        <p style={{ color: colors.muted }} className="text-xs mb-4">
+          Configure how often data is pulled from connected platforms.
+        </p>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-white/50 text-xs mb-1.5">Sync Frequency</label>
-            <select className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500/50">
+            <label className="block text-xs mb-1.5" style={{ color: colors.secondary }}>
+              Sync Frequency
+            </label>
+            <select className={`${inputClasses} ${inputFocusStyle}`} style={inputStyle}>
               <option value="daily">Daily (recommended)</option>
               <option value="12h">Every 12 hours</option>
               <option value="6h">Every 6 hours</option>
@@ -260,8 +314,10 @@ export default function Settings() {
             </select>
           </div>
           <div>
-            <label className="block text-white/50 text-xs mb-1.5">Timezone</label>
-            <select className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500/50">
+            <label className="block text-xs mb-1.5" style={{ color: colors.secondary }}>
+              Timezone
+            </label>
+            <select className={`${inputClasses} ${inputFocusStyle}`} style={inputStyle}>
               <option value="Europe/Madrid">Europe/Madrid (CET)</option>
               <option value="UTC">UTC</option>
               <option value="America/New_York">America/New_York (EST)</option>
@@ -271,21 +327,27 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* AI Configuration */}
-      <div className="bg-white/[0.03] border border-white/5 rounded-xl p-5">
-        <h3 className="text-white text-sm font-medium mb-1">AI Analyst Configuration</h3>
-        <p className="text-white/40 text-xs mb-4">Configure the AI model powering your analytical chatbot.</p>
+      {/* ── AI Configuration ───────────────────────────────────── */}
+      <div className="rounded-xl p-5" style={{ background: colors.surface, border: `1px solid ${colors.border}` }}>
+        <h3 className="text-white text-sm font-medium mb-1">AI Configuration</h3>
+        <p style={{ color: colors.muted }} className="text-xs mb-4">
+          Configure the AI model powering your analytical chatbot.
+        </p>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-white/50 text-xs mb-1.5">LLM Provider</label>
-            <select className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500/50">
+            <label className="block text-xs mb-1.5" style={{ color: colors.secondary }}>
+              LLM Provider
+            </label>
+            <select className={`${inputClasses} ${inputFocusStyle}`} style={inputStyle}>
               <option value="openai">OpenAI</option>
               <option value="anthropic">Anthropic</option>
             </select>
           </div>
           <div>
-            <label className="block text-white/50 text-xs mb-1.5">Model</label>
-            <select className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500/50">
+            <label className="block text-xs mb-1.5" style={{ color: colors.secondary }}>
+              Model
+            </label>
+            <select className={`${inputClasses} ${inputFocusStyle}`} style={inputStyle}>
               <option value="gpt-4o">GPT-4o</option>
               <option value="gpt-4o-mini">GPT-4o mini</option>
               <option value="claude-sonnet">Claude Sonnet 4.6</option>
@@ -293,16 +355,22 @@ export default function Settings() {
           </div>
         </div>
         <div className="mt-4">
-          <label className="block text-white/50 text-xs mb-1.5">API Key</label>
+          <label className="block text-xs mb-1.5" style={{ color: colors.secondary }}>
+            API Key
+          </label>
           <div className="relative">
             <input
               type={showSecrets['ai_key'] ? 'text' : 'password'}
               placeholder="sk-..."
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20"
+              className={`${inputClasses} ${inputFocusStyle}`}
+              style={inputStyle}
             />
             <button
               onClick={() => toggleSecret('ai_key')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60"
+              className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+              style={{ color: colors.muted }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = colors.secondary)}
+              onMouseLeave={(e) => (e.currentTarget.style.color = colors.muted)}
             >
               {showSecrets['ai_key'] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>

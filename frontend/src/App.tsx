@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import PlatformPage from './pages/PlatformPage';
@@ -9,24 +9,35 @@ import Forecast from './pages/Forecast';
 import Settings from './pages/Settings';
 import Chat from './pages/Chat';
 
+function PageWrapper({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  return (
+    <div key={location.pathname} className="animate-page">
+      {children}
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex h-screen overflow-hidden bg-black">
         <Sidebar />
-        <main className="flex-1 ml-64 overflow-y-auto p-6 lg:p-8">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/google-ads" element={<PlatformPage platform="google" />} />
-            <Route path="/meta-ads" element={<PlatformPage platform="meta" />} />
-            <Route path="/bing-ads" element={<PlatformPage platform="bing" />} />
-            <Route path="/seo" element={<SEO />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/crm" element={<CRM />} />
-            <Route path="/forecast" element={<Forecast />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/chat" element={<Chat />} />
-          </Routes>
+        <main className="flex-1 ml-60 overflow-y-auto p-6 lg:p-8">
+          <PageWrapper>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/google-ads" element={<PlatformPage platform="google" />} />
+              <Route path="/meta-ads" element={<PlatformPage platform="meta" />} />
+              <Route path="/bing-ads" element={<PlatformPage platform="bing" />} />
+              <Route path="/seo" element={<SEO />} />
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/crm" element={<CRM />} />
+              <Route path="/forecast" element={<Forecast />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/chat" element={<Chat />} />
+            </Routes>
+          </PageWrapper>
         </main>
       </div>
     </BrowserRouter>

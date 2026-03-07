@@ -16,7 +16,7 @@ function getConnection(): snowflake.Connection {
       throw new Error('Missing Snowflake environment variables');
     }
 
-    connection = snowflake.createConnection({ account, username, password, database, warehouse });
+    connection = snowflake.createConnection({ account, username, password, database, warehouse, schema: 'GOLD' });
   }
   return connection;
 }

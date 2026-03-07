@@ -2,180 +2,295 @@ import { api } from '../api/client';
 import { useData } from '../hooks/useData';
 import KPICard from '../components/KPICard';
 import ChartCard from '../components/ChartCard';
+import ChartTooltip from '../components/ChartTooltip';
 import LoadingSpinner from '../components/LoadingSpinner';
 import {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  Legend, ResponsiveContainer
+  LineChart, Line, AreaChart, Area, BarChart, Bar,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer,
 } from 'recharts';
 
-const fmt = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : n.toFixed(0);
-const fmtMoney = (n: number) => n >= 1000 ? `€${(n / 1000).toFixed(1)}K` : `€${n.toFixed(0)}`;
+/* ── Formatters ───────────────────────────────────────────────── */
+const fmt = (n: number) =>
+  n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` :
+  n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` :
+  n.toFixed(0);
 
-const COLORS: Record<string, string> = { 'Google Ads': '#4285F4', 'Meta Ads': '#0668E1', 'Bing Ads': '#00897B' };
+const fmtMoney = (n: number) =>
+  n >= 1_000_000 ? `€${(n / 1_000_000).toFixed(1)}M` :
+  n >= 1_000 ? `€${(n / 1_000).toFixed(1)}K` :
+  `€${n.toFixed(0)}`;
 
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-[#1a2035] border border-white/10 rounded-xl p-3 shadow-xl text-xs">
-      <p className="text-white/60 mb-2">{label}</p>
-      {payload.map((p: any, i: number) => (
-        <div key={i} className="flex items-center gap-2 py-0.5">
-          <div className="w-2 h-2 rounded-full" style={{ background: p.color }} />
-          <span className="text-white/70">{p.name}:</span>
-          <span className="text-white font-medium">{typeof p.value === 'number' ? p.value.toLocaleString() : p.value}</span>
-        </div>
-      ))}
-    </div>
-  );
+/* ── Platform mapping ─────────────────────────────────────────── */
+const PLATFORM_MAP: Record<string, { channel: string; title: string; color: string }> = {
+  google: { channel: 'Google Ads', title: 'Google Ads', color: '#4285F4' },
+  meta:   { channel: 'Meta Ads',   title: 'Meta Ads',   color: '#0668E1' },
+  bing:   { channel: 'Bing Ads',   title: 'Bing Ads',   color: '#00897B' },
 };
 
-const TITLES: Record<string, string> = { google: 'Google Ads', meta: 'Meta Ads', bing: 'Bing Ads' };
-const CHANNELS: Record<string, string> = { google: 'Google Ads', meta: 'Meta Ads', bing: 'Bing Ads' };
-
+/* ── Props ────────────────────────────────────────────────────── */
 interface Props {
   platform: 'google' | 'meta' | 'bing';
 }
 
+/* ── Component ────────────────────────────────────────────────── */
 export default function PlatformPage({ platform }: Props) {
-  const channel = CHANNELS[platform];
-  const title = TITLES[platform];
-  const color = COLORS[channel];
-  const { data: daily, loading } = useData(() => api.getCampaignDaily(channel), [channel]);
-  const { data: campaigns } = useData(() => api.getCampaigns(channel, '2026-03-01'), [channel]);
-  const { data: monthly } = useData(() => api.getMonthlySummary(), []);
-  const { data: devices } = useData(() => api.getDeviceBreakdown(), []);
+  const { channel, title, color } = PLATFORM_MAP[platform];
 
+  const { data: campaigns, loading: campsLoading } = useData(() => api.getCampaigns(channel), [channel]);
+  const { data: daily, loading: dailyLoading } = useData(() => api.getCampaignDaily(channel), [channel]);
+  const { data: devices, loading: devicesLoading } = useData(() => api.getDeviceBreakdown(), []);
+
+  const loading = campsLoading || dailyLoading || devicesLoading;
   if (loading) return <LoadingSpinner />;
 
-  // Process daily data
+  /* ── Aggregate KPIs from campaign data ─────────────────────── */
+  const channelCampaigns = campaigns?.filter((c: any) => c.CHANNEL === channel) ?? [];
+  const totalSpend       = channelCampaigns.reduce((s: number, c: any) => s + (c.SPEND || 0), 0);
+  const totalImpressions = channelCampaigns.reduce((s: number, c: any) => s + (c.IMPRESSIONS || 0), 0);
+  const totalClicks      = channelCampaigns.reduce((s: number, c: any) => s + (c.CLICKS || 0), 0);
+  const totalConversions = channelCampaigns.reduce((s: number, c: any) => s + (c.CONVERSIONS || 0), 0);
+  const totalConvValue   = channelCampaigns.reduce((s: number, c: any) => s + (c.CONVERSION_VALUE || 0), 0);
+  const avgRoas          = totalSpend > 0 ? totalConvValue / totalSpend : 0;
+
+  /* ── Daily chart data ──────────────────────────────────────── */
   const chartData = daily?.map((r: any) => ({
-    date: new Date(r.DATE).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' }),
+    date: new Date(r.DATE).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     spend: r.SPEND,
     conversions: r.CONVERSIONS,
     roas: r.ROAS,
-    ctr: r.CTR_PCT,
-  }));
+  })) ?? [];
 
-  // Monthly data for this channel
-  const channelMonthly = monthly?.filter((m: any) => m.CHANNEL === channel);
-  const marchData = channelMonthly?.find((m: any) => new Date(m.MONTH).getMonth() === 2);
-  const febData = channelMonthly?.find((m: any) => new Date(m.MONTH).getMonth() === 1);
+  /* ── Device data for this channel ──────────────────────────── */
+  const channelDevices = devices?.filter((d: any) => d.CHANNEL === channel) ?? [];
 
-  // Devices for this channel
-  const channelDevices = devices?.filter((d: any) => d.CHANNEL === channel && new Date(d.MONTH).getMonth() === 2);
+  /* ── Sorted campaigns for table ────────────────────────────── */
+  const sortedCampaigns = [...channelCampaigns].sort((a: any, b: any) => (b.ROAS || 0) - (a.ROAS || 0));
+
+  /* ── ROAS badge helper ─────────────────────────────────────── */
+  const roasBadge = (roas: number) => {
+    if (roas >= 3) return 'bg-emerald-500/15 text-emerald-400';
+    if (roas >= 2) return 'bg-[var(--color-gold)]/15 text-[var(--color-gold)]';
+    return 'bg-red-500/15 text-red-400';
+  };
 
   return (
     <div className="space-y-6">
+
+      {/* ── Header ───────────────────────────────────────────── */}
       <div>
-        <h2 className="text-xl font-semibold" style={{ color }}>{title}</h2>
-        <p className="text-white/40 text-sm mt-1">Q1 2026 Performance</p>
+        <h2 className="text-xl font-semibold" style={{ color }}>
+          {title}
+        </h2>
+        <p className="text-[var(--color-text-muted)] text-sm mt-1">
+          Platform performance overview
+        </p>
       </div>
 
-      {/* KPIs */}
+      {/* ── KPI Row ──────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <KPICard title="Spend" value={fmtMoney(marchData?.SPEND || 0)} change={marchData?.SPEND_MOM_CHANGE_PCT} prefix="" />
-        <KPICard title="Conversions" value={fmt(marchData?.CONVERSIONS || 0)} change={marchData?.CONVERSIONS_MOM_CHANGE_PCT} />
-        <KPICard title="ROAS" value={`${marchData?.ROAS || 0}x`} change={febData?.ROAS ? ((marchData?.ROAS - febData.ROAS) / febData.ROAS * 100) : null} />
-        <KPICard title="CTR" value={`${marchData?.CTR_PCT || 0}%`} />
-        <KPICard title="CPA" value={fmtMoney(marchData?.CPA || 0)} />
-      </div>
-
-      {/* Trend Charts */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <ChartCard title="Daily Spend & Conversions" subtitle="90-day trend">
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-              <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 10 }} interval={6} />
-              <YAxis yAxisId="left" tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickFormatter={(v) => `€${(v/1000).toFixed(0)}K`} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Line yAxisId="left" type="monotone" dataKey="spend" name="Spend" stroke={color} strokeWidth={2} dot={false} />
-              <Line yAxisId="right" type="monotone" dataKey="conversions" name="Conversions" stroke="#10B981" strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        <ChartCard title="Daily ROAS" subtitle="90-day trend">
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-              <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 10 }} interval={6} />
-              <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} domain={['auto', 'auto']} />
-              <Tooltip content={<CustomTooltip />} />
-              <Line type="monotone" dataKey="roas" name="ROAS" stroke="#F59E0B" strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </div>
-
-      {/* Campaigns Table & Device Breakdown */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <ChartCard title="Campaign Performance" subtitle="March 2026 · Sorted by ROAS" className="xl:col-span-2">
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="text-white/40 border-b border-white/5">
-                  <th className="text-left py-2 pr-4">Campaign</th>
-                  <th className="text-right py-2 px-2">Spend</th>
-                  <th className="text-right py-2 px-2">Conv</th>
-                  <th className="text-right py-2 px-2">ROAS</th>
-                  <th className="text-right py-2 px-2">CPA</th>
-                  <th className="text-right py-2 pl-2">Trend</th>
-                </tr>
-              </thead>
-              <tbody>
-                {campaigns?.slice(0, 12).map((c: any, i: number) => (
-                  <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                    <td className="py-2.5 pr-4">
-                      <span className="text-white/80">{c.CAMPAIGN_NAME}</span>
-                      <span className="ml-2 text-white/30 text-[10px]">{c.CAMPAIGN_TYPE}</span>
-                    </td>
-                    <td className="text-right py-2.5 px-2 text-white/60">{fmtMoney(c.SPEND)}</td>
-                    <td className="text-right py-2.5 px-2 text-white/60">{c.CONVERSIONS}</td>
-                    <td className="text-right py-2.5 px-2">
-                      <span className={`px-2 py-0.5 rounded-md text-[11px] font-medium ${
-                        c.ROAS >= 3 ? 'bg-emerald-500/15 text-emerald-400' :
-                        c.ROAS >= 1 ? 'bg-yellow-500/15 text-yellow-400' :
-                        'bg-red-500/15 text-red-400'
-                      }`}>{c.ROAS}x</span>
-                    </td>
-                    <td className="text-right py-2.5 px-2 text-white/60">{c.CPA ? fmtMoney(c.CPA) : '-'}</td>
-                    <td className="text-right py-2.5 pl-2">
-                      {c.PREV_MONTH_ROAS != null && (
-                        <span className={`text-[11px] ${c.ROAS > c.PREV_MONTH_ROAS ? 'text-emerald-400' : 'text-red-400'}`}>
-                          {c.ROAS > c.PREV_MONTH_ROAS ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {[
+          { title: 'Spend',       value: fmtMoney(totalSpend),       delay: 0 },
+          { title: 'Impressions', value: fmt(totalImpressions),      delay: 1 },
+          { title: 'Clicks',      value: fmt(totalClicks),           delay: 2 },
+          { title: 'Conversions', value: fmt(totalConversions),      delay: 3 },
+          { title: 'ROAS',        value: `${avgRoas.toFixed(2)}x`,   delay: 4 },
+        ].map((kpi) => (
+          <div
+            key={kpi.title}
+            className="animate-fade-in-up"
+            style={{ animationDelay: `${kpi.delay * 80}ms`, animationFillMode: 'both' }}
+          >
+            <KPICard title={kpi.title} value={kpi.value} />
           </div>
-        </ChartCard>
+        ))}
+      </div>
 
-        <ChartCard title="Device Split" subtitle="March 2026">
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={channelDevices} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" horizontal={false} />
-              <XAxis type="number" tick={{ fill: '#6b7280', fontSize: 10 }} tickFormatter={(v) => fmtMoney(v)} />
-              <YAxis type="category" dataKey="DEVICE" tick={{ fill: '#6b7280', fontSize: 11 }} width={70} />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="SPEND" name="Spend" fill={color} radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-          <div className="mt-3 space-y-2">
-            {channelDevices?.map((d: any) => (
-              <div key={d.DEVICE} className="flex justify-between text-xs text-white/50">
+      {/* ── Daily Spend + Conversions (dual-axis) ────────────── */}
+      <ChartCard title="Daily Spend & Conversions" subtitle="Dual-axis trend">
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#1A1A1A" />
+            <XAxis
+              dataKey="date"
+              tick={{ fill: '#4A4A4A', fontSize: 11 }}
+              axisLine={{ stroke: '#1A1A1A' }}
+              tickLine={false}
+              interval={Math.max(0, Math.floor(chartData.length / 8))}
+            />
+            <YAxis
+              yAxisId="left"
+              tick={{ fill: '#4A4A4A', fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v: number) => fmtMoney(v)}
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              tick={{ fill: '#4A4A4A', fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <Tooltip content={<ChartTooltip />} />
+            <Legend wrapperStyle={{ fontSize: 12, color: '#808080' }} />
+            <Line
+              yAxisId="left"
+              type="monotone"
+              dataKey="spend"
+              name="Spend"
+              stroke={color}
+              strokeWidth={2}
+              dot={false}
+            />
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="conversions"
+              name="Conversions"
+              stroke="#10B981"
+              strokeWidth={2}
+              dot={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </ChartCard>
+
+      {/* ── Daily ROAS AreaChart ──────────────────────────────── */}
+      <ChartCard title="Daily ROAS" subtitle="Area trend with gradient fill">
+        <ResponsiveContainer width="100%" height={280}>
+          <AreaChart data={chartData}>
+            <defs>
+              <linearGradient id={`roasGrad-${platform}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+                <stop offset="100%" stopColor={color} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#1A1A1A" />
+            <XAxis
+              dataKey="date"
+              tick={{ fill: '#4A4A4A', fontSize: 11 }}
+              axisLine={{ stroke: '#1A1A1A' }}
+              tickLine={false}
+              interval={Math.max(0, Math.floor(chartData.length / 8))}
+            />
+            <YAxis
+              tick={{ fill: '#4A4A4A', fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
+              domain={['auto', 'auto']}
+            />
+            <Tooltip content={<ChartTooltip />} />
+            <Area
+              type="monotone"
+              dataKey="roas"
+              name="ROAS"
+              stroke={color}
+              strokeWidth={2}
+              fill={`url(#roasGrad-${platform})`}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </ChartCard>
+
+      {/* ── Campaign Performance Table ────────────────────────── */}
+      <ChartCard title="Campaign Performance" subtitle="Sorted by ROAS">
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-[var(--color-border)]">
+                {['Campaign', 'Type', 'Spend', 'Impressions', 'Clicks', 'Conversions', 'CPA', 'ROAS'].map((h) => (
+                  <th
+                    key={h}
+                    className={`py-2.5 font-medium text-[var(--color-text-muted)] cursor-pointer select-none hover:text-[var(--color-text-secondary)] transition-colors ${
+                      h === 'Campaign' || h === 'Type' ? 'text-left pr-4' : 'text-right px-2'
+                    }`}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {sortedCampaigns.slice(0, 15).map((c: any, i: number) => (
+                <tr
+                  key={i}
+                  className="border-b border-[var(--color-border)]/50 hover:bg-white/[0.02] transition-colors"
+                >
+                  <td className="py-2.5 pr-4 text-white/80 max-w-[220px] truncate">
+                    {c.CAMPAIGN_NAME}
+                  </td>
+                  <td className="py-2.5 pr-4 text-[var(--color-text-muted)] text-[10px]">
+                    {c.CAMPAIGN_TYPE}
+                  </td>
+                  <td className="py-2.5 px-2 text-right text-[var(--color-text-secondary)]">
+                    {fmtMoney(c.SPEND || 0)}
+                  </td>
+                  <td className="py-2.5 px-2 text-right text-[var(--color-text-secondary)]">
+                    {fmt(c.IMPRESSIONS || 0)}
+                  </td>
+                  <td className="py-2.5 px-2 text-right text-[var(--color-text-secondary)]">
+                    {fmt(c.CLICKS || 0)}
+                  </td>
+                  <td className="py-2.5 px-2 text-right text-[var(--color-text-secondary)]">
+                    {fmt(c.CONVERSIONS || 0)}
+                  </td>
+                  <td className="py-2.5 px-2 text-right text-[var(--color-text-secondary)]">
+                    {c.CPA ? fmtMoney(c.CPA) : '-'}
+                  </td>
+                  <td className="py-2.5 px-2 text-right">
+                    <span
+                      className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-medium ${roasBadge(c.ROAS || 0)}`}
+                    >
+                      {(c.ROAS || 0).toFixed(2)}x
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </ChartCard>
+
+      {/* ── Device Breakdown (horizontal bar) ─────────────────── */}
+      <ChartCard title="Device Breakdown" subtitle="Spend by device">
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={channelDevices} layout="vertical">
+            <CartesianGrid strokeDasharray="3 3" stroke="#1A1A1A" horizontal={false} />
+            <XAxis
+              type="number"
+              tick={{ fill: '#4A4A4A', fontSize: 11 }}
+              axisLine={{ stroke: '#1A1A1A' }}
+              tickLine={false}
+              tickFormatter={(v: number) => fmtMoney(v)}
+            />
+            <YAxis
+              type="category"
+              dataKey="DEVICE"
+              tick={{ fill: '#4A4A4A', fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
+              width={80}
+            />
+            <Tooltip content={<ChartTooltip />} />
+            <Bar dataKey="SPEND" name="Spend" fill={color} radius={[0, 4, 4, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+        {channelDevices.length > 0 && (
+          <div className="mt-3 space-y-1.5 border-t border-[var(--color-border)] pt-3">
+            {channelDevices.map((d: any) => (
+              <div key={d.DEVICE} className="flex justify-between text-xs text-[var(--color-text-muted)]">
                 <span>{d.DEVICE}</span>
-                <span>ROAS: <span className="text-white/80">{d.ROAS}x</span> · CPA: <span className="text-white/80">{fmtMoney(d.CPA)}</span></span>
+                <span>
+                  ROAS: <span className="text-white/80">{(d.ROAS || 0).toFixed(2)}x</span>
+                  {' · '}
+                  Conv: <span className="text-white/80">{fmt(d.CONVERSIONS || 0)}</span>
+                </span>
               </div>
             ))}
           </div>
-        </ChartCard>
-      </div>
+        )}
+      </ChartCard>
     </div>
   );
 }

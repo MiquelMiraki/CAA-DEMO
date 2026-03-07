@@ -1,38 +1,26 @@
-import { ArrowUp, ArrowDown, Minus } from 'lucide-react';
+import { ArrowUp, ArrowDown } from 'lucide-react';
 
 interface Props {
   title: string;
   value: string;
   change?: number | null;
-  prefix?: string;
   subtitle?: string;
 }
 
-export default function KPICard({ title, value, change, prefix = '', subtitle }: Props) {
-  const isPositive = change != null && change > 0;
-  const isNegative = change != null && change < 0;
-
+export default function KPICard({ title, value, change, subtitle }: Props) {
   return (
-    <div className="bg-[#111827] rounded-2xl p-5 border border-white/5 hover:border-white/10 transition-all">
-      <p className="text-white/40 text-xs uppercase tracking-wider mb-3">{title}</p>
+    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(200,168,78,0.04)]">
+      <p className="text-[var(--color-text-secondary)] text-xs font-medium mb-2">{title}</p>
       <div className="flex items-end justify-between">
-        <div>
-          <p className="text-white text-2xl font-semibold tracking-tight">
-            {prefix}{value}
-          </p>
-          {subtitle && <p className="text-white/30 text-xs mt-1">{subtitle}</p>}
-        </div>
+        <p className="text-white text-xl font-semibold tracking-tight">{value}</p>
         {change != null && (
-          <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${
-            isPositive ? 'bg-emerald-500/10 text-emerald-400' :
-            isNegative ? 'bg-red-500/10 text-red-400' :
-            'bg-white/5 text-white/40'
-          }`}>
-            {isPositive ? <ArrowUp className="w-3 h-3" /> : isNegative ? <ArrowDown className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+          <span className={`flex items-center gap-0.5 text-xs font-medium ${change > 0 ? 'text-[var(--color-success)]' : change < 0 ? 'text-[var(--color-error)]' : 'text-[var(--color-text-muted)]'}`}>
+            {change > 0 ? <ArrowUp className="w-3 h-3" /> : change < 0 ? <ArrowDown className="w-3 h-3" /> : null}
             {Math.abs(change).toFixed(1)}%
-          </div>
+          </span>
         )}
       </div>
+      {subtitle && <p className="text-[var(--color-text-muted)] text-[11px] mt-1.5">{subtitle}</p>}
     </div>
   );
 }
