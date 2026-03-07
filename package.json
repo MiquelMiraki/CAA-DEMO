@@ -2,10 +2,11 @@
   "name": "caa_demo",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/agent/server.js",
   "scripts": {
     "agent": "ts-node -r dotenv/config src/agent/server.ts",
     "build": "tsc",
+    "start": "node dist/agent/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
