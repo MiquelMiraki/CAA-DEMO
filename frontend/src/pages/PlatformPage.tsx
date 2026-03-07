@@ -5,14 +5,13 @@ import ChartCard from '../components/ChartCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  Legend, ResponsiveContainer, Cell
+  Legend, ResponsiveContainer
 } from 'recharts';
 
 const fmt = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : n.toFixed(0);
 const fmtMoney = (n: number) => n >= 1000 ? `€${(n / 1000).toFixed(1)}K` : `€${n.toFixed(0)}`;
 
-const COLORS = { 'Google Ads': '#4285F4', 'Meta Ads': '#0668E1', 'Bing Ads': '#00897B' };
-const ROAS_COLORS = ['#10B981', '#34D399', '#6EE7B7', '#A7F3D0', '#D1FAE5', '#FEF3C7', '#FDE68A', '#FCA5A5', '#F87171', '#EF4444'];
+const COLORS: Record<string, string> = { 'Google Ads': '#4285F4', 'Meta Ads': '#0668E1', 'Bing Ads': '#00897B' };
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
@@ -30,12 +29,16 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   );
 };
 
+const TITLES: Record<string, string> = { google: 'Google Ads', meta: 'Meta Ads', bing: 'Bing Ads' };
+const CHANNELS: Record<string, string> = { google: 'Google Ads', meta: 'Meta Ads', bing: 'Bing Ads' };
+
 interface Props {
-  channel: 'Google Ads' | 'Meta Ads' | 'Bing Ads';
-  title: string;
+  platform: 'google' | 'meta' | 'bing';
 }
 
-export default function PlatformPage({ channel, title }: Props) {
+export default function PlatformPage({ platform }: Props) {
+  const channel = CHANNELS[platform];
+  const title = TITLES[platform];
   const color = COLORS[channel];
   const { data: daily, loading } = useData(() => api.getCampaignDaily(channel), [channel]);
   const { data: campaigns } = useData(() => api.getCampaigns(channel, '2026-03-01'), [channel]);

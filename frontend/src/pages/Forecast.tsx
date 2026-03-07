@@ -37,8 +37,6 @@ export default function Forecast() {
     const avgSpend = last30.reduce((s, r) => s + r.spend, 0) / last30.length;
     const avgConv = last30.reduce((s, r) => s + r.conversions, 0) / last30.length;
     const avgRev = last30.reduce((s, r) => s + r.revenue, 0) / last30.length;
-    const avgRoas = avgSpend > 0 ? avgRev / avgSpend : 0;
-
     // Efficiency decay: for every 10% budget increase, ROAS drops ~2%
     const multiplier = 1 + spendIncrease / 100;
     const efficiencyFactor = 1 - (Math.max(0, spendIncrease) * 0.002);

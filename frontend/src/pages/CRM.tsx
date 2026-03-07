@@ -24,7 +24,7 @@ export default function CRM() {
     acc[r.STAGE].weighted += r.WEIGHTED_VALUE;
     return acc;
   }, {});
-  const stageData = byStage ? Object.values(byStage) : [];
+  const stageData: any[] = byStage ? Object.values(byStage) : [];
 
   const totalDeals = stageData.reduce((s: number, r: any) => s + r.deals, 0);
   const totalValue = stageData.reduce((s: number, r: any) => s + r.value, 0);

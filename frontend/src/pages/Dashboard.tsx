@@ -104,7 +104,7 @@ export default function Dashboard() {
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={4} dataKey="value"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }: any) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                 labelLine={{ stroke: '#4b5563' }}
               >
                 {pieData?.map((entry: any, i: number) => (
@@ -121,16 +121,13 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <ChartCard title="Monthly ROAS by Channel" subtitle="Q1 2026">
           <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={monthly}>
+            <BarChart data={monthly?.filter((m: any) => m.CHANNEL === 'Google Ads') ?? []}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
               <XAxis dataKey="MONTH" tick={{ fill: '#6b7280', fontSize: 10 }} tickFormatter={(v) => new Date(v).toLocaleDateString('es-ES', { month: 'short' })} />
               <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} tickLine={false} axisLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              {Object.entries(CHANNEL_COLORS).map(([ch, color]) => (
-                <Bar key={ch} dataKey="ROAS" name={ch} fill={color} radius={[4, 4, 0, 0]}
-                  data={monthly?.filter((m: any) => m.CHANNEL === ch)} />
-              ))}
+              <Bar dataKey="ROAS" name="ROAS" fill="#4285F4" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>

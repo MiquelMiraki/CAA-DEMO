@@ -3,7 +3,7 @@ import { useData } from '../hooks/useData';
 import KPICard from '../components/KPICard';
 import ChartCard from '../components/ChartCard';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 
 const CHANNEL_COLORS: Record<string, string> = {
   'Paid Search': '#4285F4', 'Organic Search': '#10B981', 'Direct': '#8B5CF6',
@@ -66,7 +66,7 @@ export default function Analytics() {
             <Tooltip contentStyle={{ background: '#1a2035', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, fontSize: 12 }} />
             <Bar dataKey="SESSIONS" name="Sessions" radius={[0, 4, 4, 0]}>
               {marchData?.map((entry: any, i: number) => (
-                <cell key={i} fill={CHANNEL_COLORS[entry.CHANNEL_GROUPING] || '#6B7280'} />
+                <Cell key={i} fill={CHANNEL_COLORS[entry.CHANNEL_GROUPING] || '#6B7280'} />
               ))}
             </Bar>
           </BarChart>

@@ -70,7 +70,6 @@ export default function SEO() {
             <tbody>
               {marchQueries?.map((q: any, i: number) => {
                 const clickChange = q.PREV_MONTH_CLICKS ? ((q.CLICKS - q.PREV_MONTH_CLICKS) / q.PREV_MONTH_CLICKS * 100) : null;
-                const posChange = q.PREV_MONTH_POSITION ? q.AVG_POSITION - q.PREV_MONTH_POSITION : null;
                 return (
                   <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                     <td className="py-2.5 pr-4 text-white/80 font-medium">{q.QUERY}</td>
