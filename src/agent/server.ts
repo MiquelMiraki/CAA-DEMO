@@ -76,7 +76,7 @@ async function start() {
   await connectSnowflake();
   console.log('Snowflake connected.');
 
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`\nAnalytical Agent API running at http://localhost:${PORT}`);
     console.log('Endpoints:');
     console.log(`  POST /api/chat    — { message: "...", sessionId?: "..." }`);
