@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { Responsive, WidthProvider, type Layout } from 'react-grid-layout';
+import { Responsive, WidthProvider, type LayoutItem } from 'react-grid-layout/legacy';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import { Plus, X, GripVertical, RotateCcw } from 'lucide-react';
@@ -56,11 +56,11 @@ const WIDGET_CATALOG: WidgetDef[] = [
 // ─── Default Layout ───────────────────────────────────────────────────
 const DEFAULT_WIDGETS = ['kpi-spend', 'kpi-conversions', 'kpi-revenue', 'kpi-roas', 'chart-daily-spend', 'chart-spend-pie'];
 
-function buildDefaultLayout(widgetIds: string[]): Layout[] {
+function buildDefaultLayout(widgetIds: string[]): LayoutItem[] {
   let x = 0, y = 0;
   return widgetIds.map((id) => {
     const def = WIDGET_CATALOG.find(w => w.id === id)!;
-    const layout: Layout = { i: id, x, y, w: def.defaultW, h: def.defaultH, minW: def.minW, minH: def.minH };
+    const layout: LayoutItem = { i: id, x, y, w: def.defaultW, h: def.defaultH, minW: def.minW, minH: def.minH };
     x += def.defaultW;
     if (x >= 12) { x = 0; y += def.defaultH; }
     return layout;
@@ -70,7 +70,7 @@ function buildDefaultLayout(widgetIds: string[]): Layout[] {
 // ─── Persistence ──────────────────────────────────────────────────────
 function getStorageKey(clientId: string) { return `caa_dashboard_${clientId}`; }
 
-function loadDashboard(clientId: string): { widgets: string[]; layouts: Layout[] } | null {
+function loadDashboard(clientId: string): { widgets: string[]; layouts: LayoutItem[] } | null {
   try {
     const raw = localStorage.getItem(getStorageKey(clientId));
     if (raw) return JSON.parse(raw);
@@ -78,7 +78,7 @@ function loadDashboard(clientId: string): { widgets: string[]; layouts: Layout[]
   return null;
 }
 
-function saveDashboard(clientId: string, widgets: string[], layouts: Layout[]) {
+function saveDashboard(clientId: string, widgets: string[], layouts: LayoutItem[]) {
   localStorage.setItem(getStorageKey(clientId), JSON.stringify({ widgets, layouts }));
 }
 
@@ -130,7 +130,7 @@ function WidgetContent({ widgetId, data }: { widgetId: string; data: WidgetData 
               <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2}>
                 {pieData.map((d, i) => <Cell key={i} fill={d.color} />)}
               </Pie>
-              <Tooltip contentStyle={{ background: '#0A0A0A', border: '1px solid #1A1A1A', borderRadius: 8, fontSize: 12 }} formatter={(v: number) => fmtMoney(v)} />
+              <Tooltip contentStyle={{ background: '#0A0A0A', border: '1px solid #1A1A1A', borderRadius: 8, fontSize: 12 }} formatter={(v: number | undefined) => fmtMoney(v ?? 0)} />
               <Legend wrapperStyle={{ fontSize: 11, color: '#888' }} />
             </PieChart>
           </ResponsiveContainer>
@@ -306,7 +306,7 @@ export default function CustomDashboard() {
   // Load saved dashboard or use defaults
   const saved = useMemo(() => loadDashboard(client.id), [client.id]);
   const [widgets, setWidgets] = useState<string[]>(saved?.widgets || DEFAULT_WIDGETS);
-  const [layouts, setLayouts] = useState<Layout[]>(saved?.layouts || buildDefaultLayout(DEFAULT_WIDGETS));
+  const [layouts, setLayouts] = useState<LayoutItem[]>(saved?.layouts || buildDefaultLayout(DEFAULT_WIDGETS));
 
   // Fetch all data sources (only fetches what's needed based on widgets)
   const needsKPI = widgets.some(w => w.startsWith('kpi-'));
@@ -325,7 +325,7 @@ export default function CustomDashboard() {
 
   const widgetData: WidgetData = { kpi, channelDaily, monthly, funnel, campaigns, budgetPacing };
 
-  const onLayoutChange = useCallback((_: Layout[], allLayouts: any) => {
+  const onLayoutChange = useCallback((_: readonly LayoutItem[], allLayouts: any) => {
     const lg = allLayouts.lg || _;
     setLayouts(lg);
     saveDashboard(client.id, widgets, lg);
@@ -335,7 +335,7 @@ export default function CustomDashboard() {
     if (widgets.includes(widgetId)) return;
     const def = WIDGET_CATALOG.find(w => w.id === widgetId)!;
     const maxY = layouts.reduce((max, l) => Math.max(max, l.y + l.h), 0);
-    const newLayout: Layout = { i: widgetId, x: 0, y: maxY, w: def.defaultW, h: def.defaultH, minW: def.minW, minH: def.minH };
+    const newLayout: LayoutItem = { i: widgetId, x: 0, y: maxY, w: def.defaultW, h: def.defaultH, minW: def.minW, minH: def.minH };
     const newWidgets = [...widgets, widgetId];
     const newLayouts = [...layouts, newLayout];
     setWidgets(newWidgets);
@@ -434,7 +434,7 @@ export default function CustomDashboard() {
       ) : (
         <ResponsiveGridLayout
           className="custom-grid"
-          layouts={{ lg: layouts }}
+          layouts={{ lg: layouts as any }}
           breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
           cols={{ lg: 12, md: 12, sm: 6, xs: 4, xxs: 2 }}
           rowHeight={50}

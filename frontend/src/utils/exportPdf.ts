@@ -26,7 +26,7 @@ export async function exportPagePdf(pageTitle: string) {
 
   const imgWidth = 210; // A4 width in mm
   const pageHeight = 297; // A4 height in mm
-  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
 
   const pdf = new jsPDF('p', 'mm', 'a4');
 

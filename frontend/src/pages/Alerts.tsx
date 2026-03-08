@@ -31,14 +31,6 @@ const CHANNEL_COLORS: Record<string, string> = {
   'Bing Ads':   '#00897B',
 };
 
-const METRIC_ICONS: Record<string, string> = {
-  CPA: '$',
-  ROAS: '%',
-  CTR: '%',
-  SPEND: '$',
-  CONVERSIONS: '#',
-  IMPRESSIONS: '#',
-};
 
 function timeAgo(dateStr: string): string {
   const date = new Date(dateStr);

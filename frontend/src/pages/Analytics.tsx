@@ -79,7 +79,7 @@ export default function Analytics() {
 
       <ChartCard title="Traffic by Channel" subtitle={label} onExport={() => exportCsv(marchData || [], 'ga4_traffic')}>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={marchData} layout="vertical">
+          <BarChart data={marchData ?? undefined} layout="vertical">
             <CartesianGrid stroke="#1A1A1A" strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" tick={{ fill: '#4A4A4A', fontSize: 11 }} tickLine={false} axisLine={false} />
             <YAxis type="category" dataKey="CHANNEL_GROUPING" tick={{ fill: '#4A4A4A', fontSize: 11 }} tickLine={false} axisLine={false} width={110} />

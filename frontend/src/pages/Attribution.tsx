@@ -9,7 +9,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { exportCsv } from '../utils/exportCsv';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  Legend, ResponsiveContainer, Cell, RadarChart, Radar,
+  Legend, ResponsiveContainer, RadarChart, Radar,
   PolarGrid, PolarAngleAxis, PolarRadiusAxis,
 } from 'recharts';
 

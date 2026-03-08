@@ -262,7 +262,6 @@ function AssistantContent({ content }: { content: string }) {
 
 /* ── Export full conversation as PDF ──────────────────────── */
 async function exportConversationPdf(messages: Message[], title: string) {
-  const { exportPagePdf } = await import('../utils/exportPdf');
   // Build a temporary container with all messages formatted for print
   const container = document.createElement('div');
   container.id = 'chat-export-container';
