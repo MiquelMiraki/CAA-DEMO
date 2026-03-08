@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, BarChart3, Target, Share2, Search, Globe, Users,
   TrendingUp, Settings, MessageSquareText, DollarSign, Palette,
-  Key, ClipboardList
+  Key, ClipboardList, GitBranch
 } from 'lucide-react';
 
 const NAV_SECTIONS = [
@@ -22,6 +22,7 @@ const NAV_SECTIONS = [
       { to: '/bing-ads', icon: Search, label: 'Bing Ads' },
       { to: '/creatives', icon: Palette, label: 'Creatives' },
       { to: '/keywords', icon: Key, label: 'Keywords' },
+      { to: '/attribution', icon: GitBranch, label: 'Attribution' },
     ],
   },
   {

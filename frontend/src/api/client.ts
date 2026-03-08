@@ -43,6 +43,8 @@ export const api = {
   getSEODaily: (dr?: DateRange) => fetchJSON<any[]>('/data/seo-daily', dr),
   getCRMPipeline: (dr?: DateRange) => fetchJSON<any[]>('/data/crm-pipeline', dr),
   getCRMLeads: (dr?: DateRange) => fetchJSON<any[]>('/data/crm-leads', dr),
+  getAttribution: (dr?: DateRange) => fetchJSON<any[]>('/data/attribution', dr),
+  getChannelOverlap: (dr?: DateRange) => fetchJSON<any[]>('/data/channel-overlap', dr),
   getForecast: (dr?: DateRange) => fetchJSON<any[]>('/data/forecast', dr),
   chat: async (message: string, sessionId = 'default') => {
     const res = await fetch(`${API_BASE}/chat`, {

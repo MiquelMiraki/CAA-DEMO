@@ -14,6 +14,7 @@ import BudgetPacing from './pages/BudgetPacing';
 import Creatives from './pages/Creatives';
 import Keywords from './pages/Keywords';
 import ChangeAudit from './pages/ChangeAudit';
+import Attribution from './pages/Attribution';
 
 function PageWrapper({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -57,6 +58,7 @@ export default function App() {
               <Route path="/creatives" element={<Creatives />} />
               <Route path="/keywords" element={<Keywords />} />
               <Route path="/change-audit" element={<ChangeAudit />} />
+              <Route path="/attribution" element={<Attribution />} />
               <Route path="/forecast" element={<Forecast />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/chat" element={<Chat />} />

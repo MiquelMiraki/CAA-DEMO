@@ -264,6 +264,28 @@ router.get('/crm-leads', async (_req, res) => {
   }
 });
 
+// Attribution by model
+router.get('/attribution', async (req, res) => {
+  try {
+    let sql = `SELECT * FROM GOLD.ATTRIBUTION WHERE 1=1${monthCondition(req, 'MONTH')} ORDER BY MONTH, CHANNEL`;
+    const result = await executeQuery(sql);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+// Channel overlap
+router.get('/channel-overlap', async (req, res) => {
+  try {
+    let sql = `SELECT * FROM GOLD.CHANNEL_OVERLAP WHERE 1=1${monthCondition(req, 'MONTH')} ORDER BY MONTH, SOURCE_CHANNEL`;
+    const result = await executeQuery(sql);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
 // Forecast base
 router.get('/forecast', async (req, res) => {
   try {
