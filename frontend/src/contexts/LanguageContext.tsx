@@ -27,6 +27,7 @@ const translations: Record<string, Record<Lang, string>> = {
   'nav.attribution': { en: 'Attribution', es: 'Atribución' },
   'nav.seo': { en: 'SEO', es: 'SEO' },
   'nav.web_analytics': { en: 'Web Analytics', es: 'Analítica Web' },
+  'nav.sales_performance': { en: 'Sales Performance', es: 'Rendimiento Ventas' },
   'nav.crm': { en: 'CRM', es: 'CRM' },
   'nav.forecast': { en: 'Forecast', es: 'Pronóstico' },
   'nav.settings': { en: 'Settings', es: 'Configuración' },

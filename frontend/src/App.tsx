@@ -25,6 +25,7 @@ import Alerts from './pages/Alerts';
 import CustomDashboard from './pages/CustomDashboard';
 import PeriodComparison from './pages/PeriodComparison';
 import Goals from './pages/Goals';
+import Sales from './pages/Sales';
 import OnboardingWizard, { isOnboardingComplete } from './components/OnboardingWizard';
 
 function PageWrapper({ children }: { children: React.ReactNode }) {
@@ -54,6 +55,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/custom-dashboard': 'Custom Dashboard',
   '/compare': 'Period Comparison',
   '/goals': 'Goal Tracking',
+  '/sales': 'Sales Performance',
 };
 
 function TopBar() {
@@ -126,6 +128,7 @@ function AppContent() {
             <Route path="/custom-dashboard" element={<CustomDashboard />} />
             <Route path="/compare" element={<PeriodComparison />} />
             <Route path="/goals" element={<Goals />} />
+            <Route path="/sales" element={<Sales />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/chat" element={<Chat />} />
           </Routes>

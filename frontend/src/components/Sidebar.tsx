@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, BarChart3, Target, Share2, Search, Globe, Users,
   TrendingUp, Settings, MessageSquareText, DollarSign, Palette,
-  Key, ClipboardList, GitBranch, Bell, ChevronDown, Building2, LayoutGrid, ArrowLeftRight, Crosshair
+  Key, ClipboardList, GitBranch, Bell, ChevronDown, Building2, LayoutGrid, ArrowLeftRight, Crosshair, Receipt
 } from 'lucide-react';
 import { useClient } from '../contexts/ClientContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -41,7 +41,10 @@ const NAV_SECTIONS = [
   },
   {
     labelKey: 'nav.sales',
-    items: [{ to: '/crm', icon: Users, labelKey: 'nav.crm' }],
+    items: [
+      { to: '/sales', icon: Receipt, labelKey: 'nav.sales_performance' },
+      { to: '/crm', icon: Users, labelKey: 'nav.crm' },
+    ],
   },
   {
     labelKey: 'nav.tools',
