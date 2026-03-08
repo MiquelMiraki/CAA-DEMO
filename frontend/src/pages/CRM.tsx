@@ -5,6 +5,7 @@ import ChartCard from '../components/ChartCard';
 import ChartTooltip from '../components/ChartTooltip';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { exportCsv } from '../utils/exportCsv';
 
 const STAGE_COLORS: Record<string, string> = {
   'Prospecting': '#6366F1',
@@ -77,7 +78,7 @@ export default function CRM() {
         </ResponsiveContainer>
       </ChartCard>
 
-      <ChartCard title="Lead Conversion by Source" subtitle="Funnel performance">
+      <ChartCard title="Lead Conversion by Source" subtitle="Funnel performance" onExport={() => exportCsv(leads || [], 'crm_leads')}>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>

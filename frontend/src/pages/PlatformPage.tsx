@@ -4,6 +4,7 @@ import KPICard from '../components/KPICard';
 import ChartCard from '../components/ChartCard';
 import ChartTooltip from '../components/ChartTooltip';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { exportCsv } from '../utils/exportCsv';
 import {
   LineChart, Line, AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -194,7 +195,7 @@ export default function PlatformPage({ platform }: Props) {
       </ChartCard>
 
       {/* ── Campaign Performance Table ────────────────────────── */}
-      <ChartCard title="Campaign Performance" subtitle="Sorted by ROAS">
+      <ChartCard title="Campaign Performance" subtitle="Sorted by ROAS" onExport={() => exportCsv(sortedCampaigns, `${title.replace(' ', '_')}_campaigns`)}>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>

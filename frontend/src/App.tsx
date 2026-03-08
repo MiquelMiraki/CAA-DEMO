@@ -8,6 +8,10 @@ import CRM from './pages/CRM';
 import Forecast from './pages/Forecast';
 import Settings from './pages/Settings';
 import Chat from './pages/Chat';
+import BudgetPacing from './pages/BudgetPacing';
+import Creatives from './pages/Creatives';
+import Keywords from './pages/Keywords';
+import ChangeAudit from './pages/ChangeAudit';
 
 function PageWrapper({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -33,6 +37,10 @@ export default function App() {
               <Route path="/seo" element={<SEO />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/crm" element={<CRM />} />
+              <Route path="/budget-pacing" element={<BudgetPacing />} />
+              <Route path="/creatives" element={<Creatives />} />
+              <Route path="/keywords" element={<Keywords />} />
+              <Route path="/change-audit" element={<ChangeAudit />} />
               <Route path="/forecast" element={<Forecast />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/chat" element={<Chat />} />

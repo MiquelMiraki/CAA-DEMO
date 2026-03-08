@@ -6,6 +6,7 @@ import ChartTooltip from '../components/ChartTooltip';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ArrowUp, ArrowDown } from 'lucide-react';
+import { exportCsv } from '../utils/exportCsv';
 
 export default function SEO() {
   const { data: seo, loading } = useData(() => api.getSEO(), []);
@@ -79,7 +80,7 @@ export default function SEO() {
         </ChartCard>
       </div>
 
-      <ChartCard title="Top Search Queries" subtitle="March 2026 · Sorted by clicks">
+      <ChartCard title="Top Search Queries" subtitle="March 2026 · Sorted by clicks" onExport={() => exportCsv(marchQueries || [], 'seo_queries')}>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>

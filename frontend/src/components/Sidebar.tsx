@@ -1,17 +1,27 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, BarChart3, Target, Share2, Search, Globe, Users,
-  TrendingUp, Settings, MessageSquareText
+  TrendingUp, Settings, MessageSquareText, DollarSign, Palette,
+  Key, ClipboardList
 } from 'lucide-react';
 
 const NAV_SECTIONS = [
   {
-    label: 'ANALYTICS',
+    label: 'OVERVIEW',
     items: [
-      { to: '/', icon: LayoutDashboard, label: 'Overview' },
+      { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+      { to: '/budget-pacing', icon: DollarSign, label: 'Budget Pacing' },
+      { to: '/change-audit', icon: ClipboardList, label: 'Activity Log' },
+    ],
+  },
+  {
+    label: 'PAID MEDIA',
+    items: [
       { to: '/google-ads', icon: Target, label: 'Google Ads' },
       { to: '/meta-ads', icon: Share2, label: 'Meta Ads' },
       { to: '/bing-ads', icon: Search, label: 'Bing Ads' },
+      { to: '/creatives', icon: Palette, label: 'Creatives' },
+      { to: '/keywords', icon: Key, label: 'Keywords' },
     ],
   },
   {
@@ -55,6 +65,7 @@ export default function Sidebar() {
                 <NavLink
                   key={to}
                   to={to}
+                  end={to === '/'}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] transition-all duration-200 ${
                       isActive
