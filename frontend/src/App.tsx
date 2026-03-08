@@ -22,6 +22,7 @@ import Attribution from './pages/Attribution';
 import Alerts from './pages/Alerts';
 import CustomDashboard from './pages/CustomDashboard';
 import PeriodComparison from './pages/PeriodComparison';
+import Goals from './pages/Goals';
 
 function PageWrapper({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -49,6 +50,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/forecast': 'Forecast',
   '/custom-dashboard': 'Custom Dashboard',
   '/compare': 'Period Comparison',
+  '/goals': 'Goal Tracking',
 };
 
 function TopBar() {
@@ -100,6 +102,7 @@ function AppContent() {
             <Route path="/forecast" element={<Forecast />} />
             <Route path="/custom-dashboard" element={<CustomDashboard />} />
             <Route path="/compare" element={<PeriodComparison />} />
+            <Route path="/goals" element={<Goals />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/chat" element={<Chat />} />
           </Routes>
