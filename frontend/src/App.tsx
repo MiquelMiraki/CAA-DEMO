@@ -21,6 +21,7 @@ import ChangeAudit from './pages/ChangeAudit';
 import Attribution from './pages/Attribution';
 import Alerts from './pages/Alerts';
 import CustomDashboard from './pages/CustomDashboard';
+import PeriodComparison from './pages/PeriodComparison';
 
 function PageWrapper({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -47,12 +48,13 @@ const PAGE_TITLES: Record<string, string> = {
   '/alerts': 'Alerts',
   '/forecast': 'Forecast',
   '/custom-dashboard': 'Custom Dashboard',
+  '/compare': 'Period Comparison',
 };
 
 function TopBar() {
   const location = useLocation();
   const [exporting, setExporting] = useState(false);
-  const hidePicker = ['/chat', '/settings'].includes(location.pathname);
+  const hidePicker = ['/chat', '/settings', '/compare'].includes(location.pathname);
   if (hidePicker) return null;
   const pageTitle = PAGE_TITLES[location.pathname] || 'Report';
   return (
@@ -97,6 +99,7 @@ function AppContent() {
             <Route path="/alerts" element={<Alerts />} />
             <Route path="/forecast" element={<Forecast />} />
             <Route path="/custom-dashboard" element={<CustomDashboard />} />
+            <Route path="/compare" element={<PeriodComparison />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/chat" element={<Chat />} />
           </Routes>
