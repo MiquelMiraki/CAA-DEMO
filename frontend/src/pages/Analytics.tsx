@@ -1,6 +1,7 @@
 import { api } from '../api/client';
 import { useData } from '../hooks/useData';
 import { useDateRange } from '../contexts/DateRangeContext';
+import { exportCsv } from '../utils/exportCsv';
 import KPICard from '../components/KPICard';
 import ChartCard from '../components/ChartCard';
 import ChartTooltip from '../components/ChartTooltip';
@@ -76,7 +77,7 @@ export default function Analytics() {
         </ResponsiveContainer>
       </ChartCard>
 
-      <ChartCard title="Traffic by Channel" subtitle={label}>
+      <ChartCard title="Traffic by Channel" subtitle={label} onExport={() => exportCsv(marchData || [], 'ga4_traffic')}>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={marchData} layout="vertical">
             <CartesianGrid stroke="#1A1A1A" strokeDasharray="3 3" horizontal={false} />

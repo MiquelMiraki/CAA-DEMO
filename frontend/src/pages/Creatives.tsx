@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { api } from '../api/client';
 import { useData } from '../hooks/useData';
 import { useDateRange } from '../contexts/DateRangeContext';
+import { exportCsv } from '../utils/exportCsv';
 import KPICard from '../components/KPICard';
 import ChartCard from '../components/ChartCard';
 import ChartTooltip from '../components/ChartTooltip';
@@ -272,6 +273,13 @@ export default function Creatives() {
               {compareIds.length < 2 ? `Select 2 creatives to compare (${compareIds.length}/2)` : 'Sorted by ROAS (descending)'}
             </p>
           </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => exportCsv(sortedCreatives, 'creatives')}
+              className="flex items-center gap-1.5 text-[#4A4A4A] hover:text-[#C8A84E] text-xs transition-colors"
+            >
+              CSV
+            </button>
           {compareIds.length > 0 && (
             <button
               onClick={() => setCompareIds([])}
@@ -281,6 +289,7 @@ export default function Creatives() {
               Clear selection
             </button>
           )}
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">

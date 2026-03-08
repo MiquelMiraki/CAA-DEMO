@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { api } from '../api/client';
 import { useData } from '../hooks/useData';
 import { useDateRange } from '../contexts/DateRangeContext';
+import { exportCsv } from '../utils/exportCsv';
 import KPICard from '../components/KPICard';
 import ChartCard from '../components/ChartCard';
 import ChartTooltip from '../components/ChartTooltip';
@@ -142,7 +143,7 @@ export default function Keywords() {
       </ChartCard>
 
       {/* Keywords Table */}
-      <ChartCard title="All Keywords" subtitle={`${filtered.length} keywords · sorted by spend`}>
+      <ChartCard title="All Keywords" subtitle={`${filtered.length} keywords · sorted by spend`} onExport={() => exportCsv(filtered, 'keywords')}>
         {/* Search filter */}
         <div className="mb-4">
           <input

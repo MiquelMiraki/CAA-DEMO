@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { api } from '../api/client';
 import { useData } from '../hooks/useData';
 import { useDateRange } from '../contexts/DateRangeContext';
+import { exportCsv } from '../utils/exportCsv';
 import KPICard from '../components/KPICard';
 import ChartCard from '../components/ChartCard';
 import ChartTooltip from '../components/ChartTooltip';
@@ -177,7 +178,7 @@ export default function Alerts() {
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Alerts by Channel */}
-        <ChartCard title="Alerts by Channel" subtitle="Severity breakdown per channel">
+        <ChartCard title="Alerts by Channel" subtitle="Severity breakdown per channel" onExport={() => exportCsv(filtered, 'alerts')}>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={channelCounts}>
               <CartesianGrid stroke="#1A1A1A" strokeDasharray="3 3" vertical={false} />

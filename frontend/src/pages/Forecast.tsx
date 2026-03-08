@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { api } from '../api/client';
 import { useData } from '../hooks/useData';
 import { useDateRange } from '../contexts/DateRangeContext';
+import { exportCsv } from '../utils/exportCsv';
 import ChartCard from '../components/ChartCard';
 import ChartTooltip from '../components/ChartTooltip';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -236,7 +237,7 @@ export default function Forecast() {
       </div>
 
       {/* ── Main chart: Spend & Revenue ────────────────────────── */}
-      <ChartCard title="Spend & Revenue Projection" subtitle="Historical (solid) + Forecast (dashed)">
+      <ChartCard title="Spend & Revenue Projection" subtitle="Historical (solid) + Forecast (dashed)" onExport={() => exportCsv(combinedData, 'forecast_projection')}>
         <ResponsiveContainer width="100%" height={350}>
           <LineChart data={combinedData}>
             <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />

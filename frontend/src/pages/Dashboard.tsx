@@ -1,6 +1,7 @@
 import { api } from '../api/client';
 import { useData } from '../hooks/useData';
 import { useDateRange } from '../contexts/DateRangeContext';
+import { exportCsv } from '../utils/exportCsv';
 import KPICard from '../components/KPICard';
 import ChartCard from '../components/ChartCard';
 import ChartTooltip from '../components/ChartTooltip';
@@ -89,7 +90,7 @@ export default function Dashboard() {
       {/* Main Charts Row */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {/* Daily Spend — stacked area */}
-        <ChartCard title="Daily Spend by Channel" subtitle="Last 90 days" className="xl:col-span-2">
+        <ChartCard title="Daily Spend by Channel" subtitle="Last 90 days" className="xl:col-span-2" onExport={() => exportCsv(channelDaily || [], 'daily_spend_by_channel')}>
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={dailyChart}>
               <CartesianGrid stroke="#1A1A1A" strokeDasharray="3 3" />
@@ -167,7 +168,7 @@ export default function Dashboard() {
       {/* Second Row */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {/* Monthly ROAS — grouped bars */}
-        <ChartCard title="Monthly ROAS by Channel" subtitle={label}>
+        <ChartCard title="Monthly ROAS by Channel" subtitle={label} onExport={() => exportCsv(monthly || [], 'monthly_summary')}>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={monthlyRoasChart}>
               <CartesianGrid stroke="#1A1A1A" strokeDasharray="3 3" />

@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react';
+import { Download } from 'lucide-react';
 import { api } from '../api/client';
 import { useData } from '../hooks/useData';
 import { useDateRange } from '../contexts/DateRangeContext';
+import { exportCsv } from '../utils/exportCsv';
 import KPICard from '../components/KPICard';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -70,9 +72,18 @@ export default function ChangeAudit() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-white text-xl font-semibold">Activity Log</h2>
-        <p style={{ color: '#808080' }} className="text-sm mt-1">Campaign changes & audit trail</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-white text-xl font-semibold">Activity Log</h2>
+          <p style={{ color: '#808080' }} className="text-sm mt-1">Campaign changes & audit trail</p>
+        </div>
+        <button
+          onClick={() => exportCsv(filtered, 'change_audit')}
+          className="flex items-center gap-1.5 text-[#4A4A4A] hover:text-[#C8A84E] text-xs transition-colors"
+        >
+          <Download className="w-3.5 h-3.5" />
+          CSV
+        </button>
       </div>
 
       {/* KPI Cards */}

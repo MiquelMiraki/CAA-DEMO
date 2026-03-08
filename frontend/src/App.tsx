@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { FileDown } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import DateRangePicker from './components/DateRangePicker';
 import { DateRangeProvider } from './contexts/DateRangeContext';
+import { exportPagePdf } from './utils/exportPdf';
 import Dashboard from './pages/Dashboard';
 import PlatformPage from './pages/PlatformPage';
 import SEO from './pages/SEO';
@@ -26,13 +29,42 @@ function PageWrapper({ children }: { children: React.ReactNode }) {
   );
 }
 
+const PAGE_TITLES: Record<string, string> = {
+  '/': 'Dashboard Overview',
+  '/google-ads': 'Google Ads',
+  '/meta-ads': 'Meta Ads',
+  '/bing-ads': 'Bing Ads',
+  '/seo': 'SEO Performance',
+  '/analytics': 'Web Analytics',
+  '/crm': 'CRM Pipeline',
+  '/budget-pacing': 'Budget Pacing',
+  '/creatives': 'Creative Performance',
+  '/keywords': 'Keywords',
+  '/change-audit': 'Activity Log',
+  '/attribution': 'Attribution',
+  '/alerts': 'Alerts',
+  '/forecast': 'Forecast',
+};
+
 function TopBar() {
   const location = useLocation();
-  // Hide date picker on chat and settings pages
+  const [exporting, setExporting] = useState(false);
   const hidePicker = ['/chat', '/settings'].includes(location.pathname);
   if (hidePicker) return null;
+  const pageTitle = PAGE_TITLES[location.pathname] || 'Report';
   return (
-    <div className="flex justify-end mb-4">
+    <div className="flex justify-end items-center gap-3 mb-4">
+      <button
+        onClick={async () => {
+          setExporting(true);
+          try { await exportPagePdf(pageTitle); } finally { setExporting(false); }
+        }}
+        disabled={exporting}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all border-[#1A1A1A] text-[#4A4A4A] hover:border-[#C8A84E]/30 hover:text-[#C8A84E]/80 disabled:opacity-50"
+      >
+        <FileDown className="w-3.5 h-3.5" />
+        {exporting ? 'Exporting...' : 'PDF'}
+      </button>
       <DateRangePicker />
     </div>
   );

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { api } from '../api/client';
 import { useData } from '../hooks/useData';
 import { useDateRange } from '../contexts/DateRangeContext';
+import { exportCsv } from '../utils/exportCsv';
 import KPICard from '../components/KPICard';
 import ChartCard from '../components/ChartCard';
 import ChartTooltip from '../components/ChartTooltip';
@@ -123,7 +124,7 @@ export default function BudgetPacing() {
       </div>
 
       {/* ── Stacked bar chart: Spend vs Remaining ──────────────── */}
-      <ChartCard title="Campaign Spend vs Remaining Budget" subtitle="Colored by pacing status">
+      <ChartCard title="Campaign Spend vs Remaining Budget" subtitle="Colored by pacing status" onExport={() => exportCsv(marchData, 'budget_pacing')}>
         <ResponsiveContainer width="100%" height={Math.max(350, marchData.length * 38)}>
           <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 20 }}>
             <CartesianGrid stroke="#1A1A1A" strokeDasharray="3 3" horizontal={false} />
