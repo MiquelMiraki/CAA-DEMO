@@ -6,47 +6,48 @@ import {
   Key, ClipboardList, GitBranch, Bell, ChevronDown, Building2, LayoutGrid, ArrowLeftRight, Crosshair
 } from 'lucide-react';
 import { useClient } from '../contexts/ClientContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const NAV_SECTIONS = [
   {
-    label: 'OVERVIEW',
+    labelKey: 'nav.overview',
     items: [
-      { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-      { to: '/budget-pacing', icon: DollarSign, label: 'Budget Pacing' },
-      { to: '/change-audit', icon: ClipboardList, label: 'Activity Log' },
-      { to: '/alerts', icon: Bell, label: 'Alerts' },
-      { to: '/goals', icon: Crosshair, label: 'Goals' },
-      { to: '/compare', icon: ArrowLeftRight, label: 'Compare Periods' },
-      { to: '/custom-dashboard', icon: LayoutGrid, label: 'My Dashboard' },
+      { to: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
+      { to: '/budget-pacing', icon: DollarSign, labelKey: 'nav.budget_pacing' },
+      { to: '/change-audit', icon: ClipboardList, labelKey: 'nav.activity_log' },
+      { to: '/alerts', icon: Bell, labelKey: 'nav.alerts' },
+      { to: '/goals', icon: Crosshair, labelKey: 'nav.goals' },
+      { to: '/compare', icon: ArrowLeftRight, labelKey: 'nav.compare' },
+      { to: '/custom-dashboard', icon: LayoutGrid, labelKey: 'nav.my_dashboard' },
     ],
   },
   {
-    label: 'PAID MEDIA',
+    labelKey: 'nav.paid_media',
     items: [
-      { to: '/google-ads', icon: Target, label: 'Google Ads' },
-      { to: '/meta-ads', icon: Share2, label: 'Meta Ads' },
-      { to: '/bing-ads', icon: Search, label: 'Bing Ads' },
-      { to: '/creatives', icon: Palette, label: 'Creatives' },
-      { to: '/keywords', icon: Key, label: 'Keywords' },
-      { to: '/attribution', icon: GitBranch, label: 'Attribution' },
+      { to: '/google-ads', icon: Target, labelKey: 'nav.google_ads' },
+      { to: '/meta-ads', icon: Share2, labelKey: 'nav.meta_ads' },
+      { to: '/bing-ads', icon: Search, labelKey: 'nav.bing_ads' },
+      { to: '/creatives', icon: Palette, labelKey: 'nav.creatives' },
+      { to: '/keywords', icon: Key, labelKey: 'nav.keywords' },
+      { to: '/attribution', icon: GitBranch, labelKey: 'nav.attribution' },
     ],
   },
   {
-    label: 'ORGANIC',
+    labelKey: 'nav.organic',
     items: [
-      { to: '/seo', icon: Globe, label: 'SEO' },
-      { to: '/analytics', icon: BarChart3, label: 'Web Analytics' },
+      { to: '/seo', icon: Globe, labelKey: 'nav.seo' },
+      { to: '/analytics', icon: BarChart3, labelKey: 'nav.web_analytics' },
     ],
   },
   {
-    label: 'SALES',
-    items: [{ to: '/crm', icon: Users, label: 'CRM' }],
+    labelKey: 'nav.sales',
+    items: [{ to: '/crm', icon: Users, labelKey: 'nav.crm' }],
   },
   {
-    label: 'TOOLS',
+    labelKey: 'nav.tools',
     items: [
-      { to: '/forecast', icon: TrendingUp, label: 'Forecast' },
-      { to: '/settings', icon: Settings, label: 'Settings' },
+      { to: '/forecast', icon: TrendingUp, labelKey: 'nav.forecast' },
+      { to: '/settings', icon: Settings, labelKey: 'nav.settings' },
     ],
   },
 ];
@@ -68,7 +69,7 @@ function ClientSelector() {
         <ChevronDown className={`w-3.5 h-3.5 text-[var(--color-text-muted)] transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className="absolute left-3 right-3 mt-1 bg-[#0A0A0A] border border-[var(--color-border)] rounded-lg overflow-hidden shadow-xl z-50">
+        <div className="absolute left-3 right-3 mt-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg overflow-hidden shadow-xl z-50">
           {clients.map(c => (
             <button
               key={c.id}
@@ -89,8 +90,10 @@ function ClientSelector() {
 }
 
 export default function Sidebar() {
+  const { t } = useLanguage();
+
   return (
-    <aside className="fixed left-0 top-0 bottom-0 w-60 bg-black border-r border-[var(--color-border)] flex flex-col z-50">
+    <aside className="fixed left-0 top-0 bottom-0 w-60 bg-[var(--color-bg)] border-r border-[var(--color-border)] flex flex-col z-50">
       <div className="p-5 pb-2 flex items-center gap-3">
         <img src="/miraki-logo.png" alt="Miraki AI" className="h-8 w-auto brightness-110" />
       </div>
@@ -102,12 +105,12 @@ export default function Sidebar() {
 
       <nav className="flex-1 px-3 overflow-y-auto space-y-5">
         {NAV_SECTIONS.map((section) => (
-          <div key={section.label}>
+          <div key={section.labelKey}>
             <p className="px-3 mb-1.5 text-[10px] font-medium tracking-[0.15em] text-[var(--color-text-muted)]">
-              {section.label}
+              {t(section.labelKey)}
             </p>
             <div className="space-y-0.5">
-              {section.items.map(({ to, icon: Icon, label }) => (
+              {section.items.map(({ to, icon: Icon, labelKey }) => (
                 <NavLink
                   key={to}
                   to={to}
@@ -116,12 +119,12 @@ export default function Sidebar() {
                     `flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] transition-all duration-200 ${
                       isActive
                         ? 'text-[var(--color-gold)] bg-[var(--color-gold-dim)] border-l-2 border-[var(--color-gold)] pl-2.5'
-                        : 'text-[var(--color-text-secondary)] hover:text-white/80 hover:bg-white/[0.03] border-l-2 border-transparent'
+                        : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text)]/80 hover:bg-[var(--color-text)]/[0.03] border-l-2 border-transparent'
                     }`
                   }
                 >
                   <Icon className="w-4 h-4" strokeWidth={1.5} />
-                  {label}
+                  {t(labelKey)}
                 </NavLink>
               ))}
             </div>
@@ -141,7 +144,7 @@ export default function Sidebar() {
           }
         >
           <MessageSquareText className="w-4 h-4" strokeWidth={1.5} />
-          AI Analyst
+          {t('nav.ai_analyst')}
         </NavLink>
       </div>
     </aside>

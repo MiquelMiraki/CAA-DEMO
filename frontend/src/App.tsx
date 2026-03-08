@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { FileDown } from 'lucide-react';
+import { FileDown, Sun, Moon } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import DateRangePicker from './components/DateRangePicker';
 import { DateRangeProvider } from './contexts/DateRangeContext';
 import { ClientProvider, useClient } from './contexts/ClientContext';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { exportPagePdf } from './utils/exportPdf';
 import Dashboard from './pages/Dashboard';
 import PlatformPage from './pages/PlatformPage';
@@ -57,6 +59,8 @@ const PAGE_TITLES: Record<string, string> = {
 function TopBar() {
   const location = useLocation();
   const [exporting, setExporting] = useState(false);
+  const { theme, toggle } = useTheme();
+  const { lang, setLang } = useLanguage();
   const hidePicker = ['/chat', '/settings', '/compare'].includes(location.pathname);
   if (hidePicker) return null;
   const pageTitle = PAGE_TITLES[location.pathname] || 'Report';
@@ -68,10 +72,23 @@ function TopBar() {
           try { await exportPagePdf(pageTitle); } finally { setExporting(false); }
         }}
         disabled={exporting}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all border-[#1A1A1A] text-[#4A4A4A] hover:border-[#C8A84E]/30 hover:text-[#C8A84E]/80 disabled:opacity-50"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[#C8A84E]/30 hover:text-[#C8A84E]/80 disabled:opacity-50"
       >
         <FileDown className="w-3.5 h-3.5" />
         {exporting ? 'Exporting...' : 'PDF'}
+      </button>
+      <button
+        onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
+        className="px-2.5 py-1.5 rounded-lg border border-[var(--color-border)] text-xs font-medium text-[var(--color-text-muted)] hover:border-[#C8A84E]/30 hover:text-[#C8A84E]/80 transition-all uppercase"
+      >
+        {lang}
+      </button>
+      <button
+        onClick={toggle}
+        className="p-1.5 rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[#C8A84E]/30 hover:text-[#C8A84E]/80 transition-all"
+        title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      >
+        {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
       </button>
       <DateRangePicker />
     </div>
@@ -83,7 +100,7 @@ function AppContent() {
   const [showOnboarding, setShowOnboarding] = useState(() => !isOnboardingComplete(client.id));
 
   return (
-    <div className="flex h-screen overflow-hidden bg-black">
+    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: 'var(--color-bg)' }}>
       {showOnboarding && (
         <OnboardingWizard clientId={client.id} onComplete={() => setShowOnboarding(false)} />
       )}
@@ -121,11 +138,15 @@ function AppContent() {
 export default function App() {
   return (
     <BrowserRouter>
+      <ThemeProvider>
+      <LanguageProvider>
       <ClientProvider>
       <DateRangeProvider>
         <AppContent />
       </DateRangeProvider>
       </ClientProvider>
+      </LanguageProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

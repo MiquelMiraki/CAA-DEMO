@@ -37,8 +37,22 @@ body {
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #1A1A1A; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #2A2A2A; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+
+/* Light mode overrides */
+[data-theme="light"] select {
+  background-color: #FFFFFF;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23555555' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+}
+[data-theme="light"] select option { background: #FFFFFF; color: #111; }
+[data-theme="light"] .skeleton {
+  background: linear-gradient(90deg, #F0F0F0 25%, #E0E0E0 50%, #F0F0F0 75%);
+  background-size: 200% 100%;
+}
+[data-theme="light"] .bg-black { background-color: var(--color-bg) !important; }
+[data-theme="light"] .text-white { color: var(--color-text) !important; }
+[data-theme="light"] .border-r.border-\\[var\\(--color-border\\)\\] { border-color: var(--color-border); }
 
 /* Recharts tooltip fix */
 .recharts-tooltip-wrapper { outline: none; }
