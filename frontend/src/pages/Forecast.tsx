@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { api } from '../api/client';
 import { useData } from '../hooks/useData';
+import { useDateRange } from '../contexts/DateRangeContext';
 import ChartCard from '../components/ChartCard';
 import ChartTooltip from '../components/ChartTooltip';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -29,7 +30,8 @@ const CHANNEL_COLORS: Record<string, string> = {
 
 /* ── Component ─────────────────────────────────────────────────── */
 export default function Forecast() {
-  const { data: forecast, loading } = useData(() => api.getForecast(), []);
+  const { range } = useDateRange();
+  const { data: forecast, loading } = useData(() => api.getForecast(range), [range]);
   const [selectedChannel, setSelectedChannel] = useState<string>('Google Ads');
   const [spendIncrease, setSpendIncrease] = useState(0);
   const [forecastDays, setForecastDays] = useState(30);

@@ -20,6 +20,7 @@ const STAGE_COLORS: Record<string, string> = {
 export default function CRM() {
   const { data: pipeline, loading } = useData(() => api.getCRMPipeline(), []);
   const { data: leads } = useData(() => api.getCRMLeads(), []);
+  // CRM data is not date-filtered in the current schema
 
   if (loading) return <LoadingSpinner />;
 

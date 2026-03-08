@@ -1,5 +1,6 @@
 import { api } from '../api/client';
 import { useData } from '../hooks/useData';
+import { useDateRange } from '../contexts/DateRangeContext';
 import KPICard from '../components/KPICard';
 import ChartCard from '../components/ChartCard';
 import ChartTooltip from '../components/ChartTooltip';
@@ -9,8 +10,9 @@ import { ArrowUp, ArrowDown } from 'lucide-react';
 import { exportCsv } from '../utils/exportCsv';
 
 export default function SEO() {
-  const { data: seo, loading } = useData(() => api.getSEO(), []);
-  const { data: daily } = useData(() => api.getSEODaily(), []);
+  const { range, label } = useDateRange();
+  const { data: seo, loading } = useData(() => api.getSEO(range), [range]);
+  const { data: daily } = useData(() => api.getSEODaily(range), [range]);
 
   if (loading) return <LoadingSpinner />;
 
@@ -22,8 +24,7 @@ export default function SEO() {
   }));
 
   const marchQueries = seo
-    ?.filter((s: any) => new Date(s.MONTH).getMonth() === 2)
-    .sort((a: any, b: any) => b.CLICKS - a.CLICKS);
+    ?.sort((a: any, b: any) => b.CLICKS - a.CLICKS);
 
   const totalClicks = marchQueries?.reduce((s: number, r: any) => s + r.CLICKS, 0) || 0;
   const totalImpressions = marchQueries?.reduce((s: number, r: any) => s + r.IMPRESSIONS, 0) || 0;
@@ -38,15 +39,15 @@ export default function SEO() {
     <div className="space-y-6">
       <div>
         <h2 className="text-white text-xl font-semibold">SEO Performance</h2>
-        <p style={{ color: '#808080' }} className="text-sm mt-1">Google Search Console · Q1 2026</p>
+        <p style={{ color: '#808080' }} className="text-sm mt-1">Google Search Console · {label}</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { title: 'Total Clicks', value: totalClicks.toLocaleString('en-US'), subtitle: 'March 2026' },
-          { title: 'Impressions', value: totalImpressions.toLocaleString('en-US'), subtitle: 'March 2026' },
-          { title: 'Avg CTR', value: `${avgCTR.toFixed(1)}%`, subtitle: 'March 2026' },
-          { title: 'Avg Position', value: avgPosition.toFixed(1), subtitle: 'March 2026' },
+          { title: 'Total Clicks', value: totalClicks.toLocaleString('en-US'), subtitle: label },
+          { title: 'Impressions', value: totalImpressions.toLocaleString('en-US'), subtitle: label },
+          { title: 'Avg CTR', value: `${avgCTR.toFixed(1)}%`, subtitle: label },
+          { title: 'Avg Position', value: avgPosition.toFixed(1), subtitle: label },
         ].map((kpi, i) => (
           <div key={i} style={{ animationDelay: `${i * 100}ms` }} className="animate-[fadeInUp_0.5s_ease_both]">
             <KPICard title={kpi.title} value={kpi.value} subtitle={kpi.subtitle} />
@@ -80,7 +81,7 @@ export default function SEO() {
         </ChartCard>
       </div>
 
-      <ChartCard title="Top Search Queries" subtitle="March 2026 · Sorted by clicks" onExport={() => exportCsv(marchQueries || [], 'seo_queries')}>
+      <ChartCard title="Top Search Queries" subtitle={`${label} · Sorted by clicks`} onExport={() => exportCsv(marchQueries || [], 'seo_queries')}>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>

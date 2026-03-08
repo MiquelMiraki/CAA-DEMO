@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { api } from '../api/client';
 import { useData } from '../hooks/useData';
+import { useDateRange } from '../contexts/DateRangeContext';
 import KPICard from '../components/KPICard';
 import ChartCard from '../components/ChartCard';
 import ChartTooltip from '../components/ChartTooltip';
@@ -44,13 +45,13 @@ const statusLabel = (s: string) =>
 
 /* ── Component ─────────────────────────────────────────────────── */
 export default function BudgetPacing() {
-  const { data: raw, loading } = useData(() => api.getBudgetPacing(), []);
+  const { range } = useDateRange();
+  const { data: raw, loading } = useData(() => api.getBudgetPacing(range), [range]);
 
-  /* --- filter to March (month index 2) --- */
+  /* --- data from selected date range --- */
   const marchData = useMemo(() => {
     if (!raw) return [];
     return raw
-      .filter((r: any) => new Date(r.MONTH).getMonth() === 2)
       .map((r: any) => ({
         campaignId:    r.CAMPAIGN_ID,
         campaignName:  r.CAMPAIGN_NAME,

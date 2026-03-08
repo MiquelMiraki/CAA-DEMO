@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
+import DateRangePicker from './components/DateRangePicker';
+import { DateRangeProvider } from './contexts/DateRangeContext';
 import Dashboard from './pages/Dashboard';
 import PlatformPage from './pages/PlatformPage';
 import SEO from './pages/SEO';
@@ -22,12 +24,26 @@ function PageWrapper({ children }: { children: React.ReactNode }) {
   );
 }
 
+function TopBar() {
+  const location = useLocation();
+  // Hide date picker on chat and settings pages
+  const hidePicker = ['/chat', '/settings'].includes(location.pathname);
+  if (hidePicker) return null;
+  return (
+    <div className="flex justify-end mb-4">
+      <DateRangePicker />
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
+      <DateRangeProvider>
       <div className="flex h-screen overflow-hidden bg-black">
         <Sidebar />
         <main className="flex-1 ml-60 overflow-y-auto p-6 lg:p-8">
+          <TopBar />
           <PageWrapper>
             <Routes>
               <Route path="/" element={<Dashboard />} />
@@ -48,6 +64,7 @@ export default function App() {
           </PageWrapper>
         </main>
       </div>
+    </DateRangeProvider>
     </BrowserRouter>
   );
 }

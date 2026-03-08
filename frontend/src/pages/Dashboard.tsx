@@ -1,5 +1,6 @@
 import { api } from '../api/client';
 import { useData } from '../hooks/useData';
+import { useDateRange } from '../contexts/DateRangeContext';
 import KPICard from '../components/KPICard';
 import ChartCard from '../components/ChartCard';
 import ChartTooltip from '../components/ChartTooltip';
@@ -19,10 +20,11 @@ const fmt = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : n.toFixed(0
 const fmtMoney = (n: number) => n >= 1000 ? `€${(n / 1000).toFixed(1)}K` : `€${n.toFixed(0)}`;
 
 export default function Dashboard() {
-  const { data: kpi, loading: kpiLoading } = useData(() => api.getKPI(), []);
-  const { data: channelDaily } = useData(() => api.getChannelDaily(), []);
-  const { data: monthly } = useData(() => api.getMonthlySummary(), []);
-  const { data: funnel } = useData(() => api.getFunnel(), []);
+  const { range, label } = useDateRange();
+  const { data: kpi, loading: kpiLoading } = useData(() => api.getKPI(range), [range]);
+  const { data: channelDaily } = useData(() => api.getChannelDaily(range), [range]);
+  const { data: monthly } = useData(() => api.getMonthlySummary(range), [range]);
+  const { data: funnel } = useData(() => api.getFunnel(range), [range]);
 
   if (kpiLoading) return <LoadingSpinner />;
   const k = kpi?.[0];
@@ -36,11 +38,14 @@ export default function Dashboard() {
   }, {});
   const dailyChart: any[] = dailyByDate ? Object.values(dailyByDate) : [];
 
-  // --- Spend distribution pie (latest month) ---
-  const latestMonth = monthly?.filter((m: any) => {
-    const d = new Date(m.MONTH);
-    return d.getMonth() === 2; // March
+  // --- Spend distribution pie (aggregate across selected range) ---
+  const spendByChannel: Record<string, number> = {};
+  monthly?.forEach((m: any) => {
+    spendByChannel[m.CHANNEL] = (spendByChannel[m.CHANNEL] || 0) + m.SPEND;
   });
+  const latestMonth = Object.entries(spendByChannel).map(([ch, spend]) => ({
+    CHANNEL: ch, SPEND: spend,
+  }));
 
   const pieData = latestMonth?.map((m: any) => ({
     name: m.CHANNEL,
@@ -57,15 +62,15 @@ export default function Dashboard() {
   });
   const monthlyRoasChart: any[] = Object.values(monthlyRoasMap);
 
-  // --- Funnel data for March ---
-  const marchFunnel = funnel?.filter((f: any) => new Date(f.MONTH).getMonth() === 2);
+  // --- Funnel data (use all data from selected range) ---
+  const marchFunnel = funnel;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <h2 className="text-white text-xl font-semibold">Dashboard Overview</h2>
-        <p className="text-[var(--color-text-muted)] text-sm mt-1">Cross-platform performance · Q1 2026</p>
+        <p className="text-[var(--color-text-muted)] text-sm mt-1">Cross-platform performance · {label}</p>
       </div>
 
       {/* KPI Cards */}
@@ -121,7 +126,7 @@ export default function Dashboard() {
         </ChartCard>
 
         {/* Spend Distribution — donut */}
-        <ChartCard title="Spend Distribution" subtitle="March 2026">
+        <ChartCard title="Spend Distribution" subtitle={label}>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -162,7 +167,7 @@ export default function Dashboard() {
       {/* Second Row */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {/* Monthly ROAS — grouped bars */}
-        <ChartCard title="Monthly ROAS by Channel" subtitle="Q1 2026">
+        <ChartCard title="Monthly ROAS by Channel" subtitle={label}>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={monthlyRoasChart}>
               <CartesianGrid stroke="#1A1A1A" strokeDasharray="3 3" />
@@ -187,7 +192,7 @@ export default function Dashboard() {
         </ChartCard>
 
         {/* Conversion Funnel — custom HTML */}
-        <ChartCard title="Conversion Funnel" subtitle="March 2026">
+        <ChartCard title="Conversion Funnel" subtitle={label}>
           <div className="space-y-3 mt-2">
             {marchFunnel?.map((f: any) => {
               const maxImp = Math.max(...(marchFunnel?.map((x: any) => x.TOTAL_IMPRESSIONS) || [1]));

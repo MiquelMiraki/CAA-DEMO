@@ -1,5 +1,6 @@
 import { api } from '../api/client';
 import { useData } from '../hooks/useData';
+import { useDateRange } from '../contexts/DateRangeContext';
 import KPICard from '../components/KPICard';
 import ChartCard from '../components/ChartCard';
 import ChartTooltip from '../components/ChartTooltip';
@@ -28,8 +29,9 @@ function roasBadge(roas: number) {
 }
 
 export default function Creatives() {
-  const { data: creatives, loading: loadingC } = useData(() => api.getCreatives(), []);
-  const { data: placements, loading: loadingP } = useData(() => api.getPlacements(), []);
+  const { range, label } = useDateRange();
+  const { data: creatives, loading: loadingC } = useData(() => api.getCreatives(range), [range]);
+  const { data: placements, loading: loadingP } = useData(() => api.getPlacements(range), [range]);
 
   if (loadingC || loadingP) return <LoadingSpinner />;
 
@@ -58,11 +60,8 @@ export default function Creatives() {
     ROAS: parseFloat((sum / count).toFixed(2)),
   }));
 
-  // --- Placement chart data (March only) ---
-  const marchPlacements = placements?.filter((p: any) => {
-    const d = new Date(p.MONTH);
-    return d.getMonth() === 2; // March
-  }) || [];
+  // --- Placement chart data (filtered by date range) ---
+  const marchPlacements = placements || [];
   const placementChartData = marchPlacements.map((p: any) => ({
     placement: p.PLACEMENT,
     Spend: p.SPEND,
@@ -116,7 +115,7 @@ export default function Creatives() {
       </ChartCard>
 
       {/* Placement Performance */}
-      <ChartCard title="Placement Performance" subtitle="March · Spend & ROAS by placement">
+      <ChartCard title="Placement Performance" subtitle={`${label} · Spend & ROAS by placement`}>
         <ResponsiveContainer width="100%" height={Math.max(250, placementChartData.length * 40)}>
           <BarChart data={placementChartData} layout="vertical">
             <CartesianGrid stroke="#1A1A1A" strokeDasharray="3 3" horizontal={false} />

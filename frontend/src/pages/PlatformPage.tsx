@@ -1,5 +1,6 @@
 import { api } from '../api/client';
 import { useData } from '../hooks/useData';
+import { useDateRange } from '../contexts/DateRangeContext';
 import KPICard from '../components/KPICard';
 import ChartCard from '../components/ChartCard';
 import ChartTooltip from '../components/ChartTooltip';
@@ -37,10 +38,11 @@ interface Props {
 /* ── Component ────────────────────────────────────────────────── */
 export default function PlatformPage({ platform }: Props) {
   const { channel, title, color } = PLATFORM_MAP[platform];
+  const { range } = useDateRange();
 
-  const { data: campaigns, loading: campsLoading } = useData(() => api.getCampaigns(channel), [channel]);
-  const { data: daily, loading: dailyLoading } = useData(() => api.getCampaignDaily(channel), [channel]);
-  const { data: devices, loading: devicesLoading } = useData(() => api.getDeviceBreakdown(), []);
+  const { data: campaigns, loading: campsLoading } = useData(() => api.getCampaigns(channel, undefined, range), [channel, range]);
+  const { data: daily, loading: dailyLoading } = useData(() => api.getCampaignDaily(channel, range), [channel, range]);
+  const { data: devices, loading: devicesLoading } = useData(() => api.getDeviceBreakdown(range), [range]);
 
   const loading = campsLoading || dailyLoading || devicesLoading;
   if (loading) return <LoadingSpinner />;

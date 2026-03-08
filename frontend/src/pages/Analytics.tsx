@@ -1,5 +1,6 @@
 import { api } from '../api/client';
 import { useData } from '../hooks/useData';
+import { useDateRange } from '../contexts/DateRangeContext';
 import KPICard from '../components/KPICard';
 import ChartCard from '../components/ChartCard';
 import ChartTooltip from '../components/ChartTooltip';
@@ -19,12 +20,13 @@ const CHANNEL_COLORS: Record<string, string> = {
 };
 
 export default function Analytics() {
-  const { data: overview, loading } = useData(() => api.getGA4Overview(), []);
-  const { data: daily } = useData(() => api.getGA4Daily(), []);
+  const { range, label } = useDateRange();
+  const { data: overview, loading } = useData(() => api.getGA4Overview(range), [range]);
+  const { data: daily } = useData(() => api.getGA4Daily(range), [range]);
 
   if (loading) return <LoadingSpinner />;
 
-  const marchData = overview?.filter((o: any) => new Date(o.MONTH).getMonth() === 2);
+  const marchData = overview;
   const totalSessions = marchData?.reduce((s: number, r: any) => s + r.SESSIONS, 0) || 0;
   const totalConv = marchData?.reduce((s: number, r: any) => s + r.CONVERSIONS, 0) || 0;
   const totalRev = marchData?.reduce((s: number, r: any) => s + r.REVENUE, 0) || 0;
@@ -43,15 +45,15 @@ export default function Analytics() {
     <div className="space-y-6">
       <div>
         <h2 className="text-white text-xl font-semibold">Web Analytics</h2>
-        <p style={{ color: '#808080' }} className="text-sm mt-1">Google Analytics 4 · Q1 2026</p>
+        <p style={{ color: '#808080' }} className="text-sm mt-1">Google Analytics 4 · {label}</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { title: 'Sessions', value: `${(totalSessions / 1000).toFixed(1)}K`, subtitle: 'March 2026' },
-          { title: 'Conversions', value: totalConv.toLocaleString('en-US'), subtitle: 'March 2026' },
-          { title: 'Revenue', value: `€${(totalRev / 1000).toFixed(1)}K`, subtitle: 'March 2026' },
-          { title: 'Engagement Rate', value: `${avgEngRate.toFixed(1)}%`, subtitle: 'March 2026' },
+          { title: 'Sessions', value: `${(totalSessions / 1000).toFixed(1)}K`, subtitle: label },
+          { title: 'Conversions', value: totalConv.toLocaleString('en-US'), subtitle: label },
+          { title: 'Revenue', value: `€${(totalRev / 1000).toFixed(1)}K`, subtitle: label },
+          { title: 'Engagement Rate', value: `${avgEngRate.toFixed(1)}%`, subtitle: label },
         ].map((kpi, i) => (
           <div key={i} style={{ animationDelay: `${i * 100}ms` }} className="animate-[fadeInUp_0.5s_ease_both]">
             <KPICard title={kpi.title} value={kpi.value} subtitle={kpi.subtitle} />
@@ -74,7 +76,7 @@ export default function Analytics() {
         </ResponsiveContainer>
       </ChartCard>
 
-      <ChartCard title="Traffic by Channel" subtitle="March 2026">
+      <ChartCard title="Traffic by Channel" subtitle={label}>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={marchData} layout="vertical">
             <CartesianGrid stroke="#1A1A1A" strokeDasharray="3 3" horizontal={false} />

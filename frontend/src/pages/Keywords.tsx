@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { api } from '../api/client';
 import { useData } from '../hooks/useData';
+import { useDateRange } from '../contexts/DateRangeContext';
 import KPICard from '../components/KPICard';
 import ChartCard from '../components/ChartCard';
 import ChartTooltip from '../components/ChartTooltip';
@@ -16,7 +17,8 @@ const MATCH_COLORS: Record<string, string> = {
 const fmtMoney = (n: number) => n >= 1000 ? `€${(n / 1000).toFixed(1)}K` : `€${n.toFixed(2)}`;
 
 export default function Keywords() {
-  const { data: keywords, loading } = useData(() => api.getKeywords(), []);
+  const { range } = useDateRange();
+  const { data: keywords, loading } = useData(() => api.getKeywords(range), [range]);
   const [filter, setFilter] = useState('');
 
   const sorted = useMemo(() => {

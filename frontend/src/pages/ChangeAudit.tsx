@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { api } from '../api/client';
 import { useData } from '../hooks/useData';
+import { useDateRange } from '../contexts/DateRangeContext';
 import KPICard from '../components/KPICard';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -30,7 +31,8 @@ function formatRelativeTime(dateStr: string): string {
 }
 
 export default function ChangeAudit() {
-  const { data: changes, loading } = useData(() => api.getChangeAudit(), []);
+  const { range } = useDateRange();
+  const { data: changes, loading } = useData(() => api.getChangeAudit(range), [range]);
   const [platformFilter, setPlatformFilter] = useState<'all' | 'google_ads' | 'meta_ads'>('all');
 
   const sorted = useMemo(() => {
