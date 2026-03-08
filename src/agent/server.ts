@@ -6,6 +6,7 @@ import dataRoutes from './data-routes';
 import publicApi from './public-api';
 import apiDocs from './api-docs';
 import { initApiKeys } from './api-keys';
+import { seedMissingTables } from './seed-tables';
 
 const app = express();
 app.use(cors());
@@ -91,6 +92,9 @@ async function start() {
 
   // Initialize API keys for public API
   await initApiKeys();
+
+  // Seed any missing Snowflake tables with synthetic data
+  seedMissingTables().catch((err) => console.warn('[Seed] Non-fatal error:', err.message));
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`\nAnalytical Agent API running at http://localhost:${PORT}`);
