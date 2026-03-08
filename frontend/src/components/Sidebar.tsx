@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, BarChart3, Target, Share2, Search, Globe, Users,
   TrendingUp, Settings, MessageSquareText, DollarSign, Palette,
-  Key, ClipboardList, GitBranch, Bell
+  Key, ClipboardList, GitBranch, Bell, ChevronDown, Building2, LayoutGrid
 } from 'lucide-react';
+import { useClient } from '../contexts/ClientContext';
 
 const NAV_SECTIONS = [
   {
@@ -13,6 +15,7 @@ const NAV_SECTIONS = [
       { to: '/budget-pacing', icon: DollarSign, label: 'Budget Pacing' },
       { to: '/change-audit', icon: ClipboardList, label: 'Activity Log' },
       { to: '/alerts', icon: Bell, label: 'Alerts' },
+      { to: '/custom-dashboard', icon: LayoutGrid, label: 'My Dashboard' },
     ],
   },
   {
@@ -46,15 +49,54 @@ const NAV_SECTIONS = [
   },
 ];
 
+function ClientSelector() {
+  const { client, setClient, clients } = useClient();
+  const [open, setOpen] = useState(false);
+
+  if (clients.length <= 1) return null;
+
+  return (
+    <div className="px-3 pb-3 relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--color-border)] hover:border-[var(--color-gold)]/30 transition-all text-left"
+      >
+        <Building2 className="w-4 h-4 text-[var(--color-gold)]" strokeWidth={1.5} />
+        <span className="flex-1 text-[12px] text-[var(--color-text-secondary)] truncate">{client.name}</span>
+        <ChevronDown className={`w-3.5 h-3.5 text-[var(--color-text-muted)] transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute left-3 right-3 mt-1 bg-[#0A0A0A] border border-[var(--color-border)] rounded-lg overflow-hidden shadow-xl z-50">
+          {clients.map(c => (
+            <button
+              key={c.id}
+              onClick={() => { setClient(c); setOpen(false); }}
+              className={`w-full text-left px-3 py-2 text-[12px] transition-colors ${
+                c.id === client.id
+                  ? 'text-[var(--color-gold)] bg-[var(--color-gold-dim)]'
+                  : 'text-[var(--color-text-secondary)] hover:bg-white/[0.03]'
+              }`}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 bottom-0 w-60 bg-black border-r border-[var(--color-border)] flex flex-col z-50">
       <div className="p-5 pb-2 flex items-center gap-3">
         <img src="/miraki-logo.png" alt="Miraki AI" className="h-8 w-auto brightness-110" />
       </div>
-      <div className="px-5 pb-5">
+      <div className="px-5 pb-3">
         <span className="text-[10px] font-semibold tracking-[0.2em] text-[var(--color-gold)]">CAA ANALYTICS</span>
       </div>
+
+      <ClientSelector />
 
       <nav className="flex-1 px-3 overflow-y-auto space-y-5">
         {NAV_SECTIONS.map((section) => (

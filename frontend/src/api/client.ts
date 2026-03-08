@@ -5,10 +5,16 @@ export interface DateRange {
   to: string;
 }
 
+// Global client schema — set by ClientContext, read by all API calls
+let _currentClient = 'GOLD';
+export function setApiClient(clientId: string) { _currentClient = clientId; }
+
 async function fetchJSON<T>(path: string, dateRange?: DateRange): Promise<T> {
   const sep = path.includes('?') ? '&' : '?';
   let url = `${API_BASE}${path}`;
   if (dateRange) url += `${sep}from=${dateRange.from}&to=${dateRange.to}`;
+  // Append client param
+  url += (url.includes('?') ? '&' : '?') + `client=${_currentClient}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
@@ -47,11 +53,12 @@ export const api = {
   getChannelOverlap: (dr?: DateRange) => fetchJSON<any[]>('/data/channel-overlap', dr),
   getAlerts: (dr?: DateRange) => fetchJSON<any[]>('/data/alerts', dr),
   getForecast: (dr?: DateRange) => fetchJSON<any[]>('/data/forecast', dr),
+  getClients: () => fetchJSON<{ id: string; name: string }[]>('/data/clients'),
   chat: async (message: string, sessionId = 'default') => {
     const res = await fetch(`${API_BASE}/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, sessionId }),
+      body: JSON.stringify({ message, sessionId, client: _currentClient }),
     });
     if (!res.ok) throw new Error(`Chat error: ${res.status}`);
     return res.json() as Promise<{ response: string; queriesExecuted: number; elapsed: number; sqlQueries?: { sql: string; purpose: string }[] }>;

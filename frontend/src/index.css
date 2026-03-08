@@ -88,3 +88,17 @@ select {
   padding-right: 32px;
 }
 select option { background: #0A0A0A; color: #fff; }
+
+/* React Grid Layout overrides for dark theme */
+.react-grid-item.react-grid-placeholder {
+  background: rgba(200, 168, 78, 0.1) !important;
+  border: 1px dashed rgba(200, 168, 78, 0.3) !important;
+  border-radius: 8px;
+  opacity: 1 !important;
+}
+.react-grid-item > .react-resizable-handle::after {
+  border-color: #333 !important;
+}
+.react-grid-item > .react-resizable-handle:hover::after {
+  border-color: #C8A84E !important;
+}

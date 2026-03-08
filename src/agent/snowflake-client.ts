@@ -16,7 +16,8 @@ function getConnection(): snowflake.Connection {
       throw new Error('Missing Snowflake environment variables');
     }
 
-    connection = snowflake.createConnection({ account, username, password, database, warehouse, schema: 'GOLD' });
+    const schema = process.env.SNOWFLAKE_DEFAULT_SCHEMA || 'GOLD';
+    connection = snowflake.createConnection({ account, username, password, database, warehouse, schema });
   }
   return connection;
 }
@@ -53,21 +54,25 @@ export async function executeQuery(sql: string): Promise<{ columns: string[]; ro
   });
 }
 
-export async function getTableSchema(tableName: string): Promise<{ columns: string[]; rows: Record<string, unknown>[] }> {
+export async function getTableSchema(tableName: string, schema?: string): Promise<{ columns: string[]; rows: Record<string, unknown>[] }> {
+  const db = process.env.SNOWFLAKE_DATABASE || 'CAA_DB';
+  const s = schema || process.env.SNOWFLAKE_DEFAULT_SCHEMA || 'GOLD';
   const result = await executeQuery(
     `SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE
-     FROM CAA_DB.INFORMATION_SCHEMA.COLUMNS
-     WHERE TABLE_SCHEMA = 'GOLD' AND TABLE_NAME = '${tableName.toUpperCase()}'
+     FROM ${db}.INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = '${s}' AND TABLE_NAME = '${tableName.toUpperCase()}'
      ORDER BY ORDINAL_POSITION`
   );
   return result;
 }
 
-export async function listGoldTables(): Promise<string[]> {
+export async function listGoldTables(schema?: string): Promise<string[]> {
+  const db = process.env.SNOWFLAKE_DATABASE || 'CAA_DB';
+  const s = schema || process.env.SNOWFLAKE_DEFAULT_SCHEMA || 'GOLD';
   const result = await executeQuery(
     `SELECT TABLE_NAME, ROW_COUNT
-     FROM CAA_DB.INFORMATION_SCHEMA.TABLES
-     WHERE TABLE_SCHEMA = 'GOLD' AND TABLE_TYPE = 'BASE TABLE'
+     FROM ${db}.INFORMATION_SCHEMA.TABLES
+     WHERE TABLE_SCHEMA = '${s}' AND TABLE_TYPE = 'BASE TABLE'
      ORDER BY TABLE_NAME`
   );
   return result.rows.map((r) => `${r.TABLE_NAME} (${r.ROW_COUNT} rows)`);

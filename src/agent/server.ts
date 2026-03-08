@@ -21,19 +21,22 @@ app.get('/api/health', (_req, res) => {
 
 // Chat endpoint
 app.post('/api/chat', async (req, res) => {
-  const { message, sessionId = 'default' } = req.body;
+  const { message, sessionId = 'default', client } = req.body;
 
   if (!message || typeof message !== 'string') {
     res.status(400).json({ error: 'Missing "message" field' });
     return;
   }
 
+  // Validate client schema if provided
+  const schema = client && /^GOLD[A-Z0-9_]*$/i.test(client) ? client.toUpperCase() : undefined;
+
   try {
     const history = sessions.get(sessionId) || [];
-    console.log(`\n[${sessionId}] User: ${message}`);
+    console.log(`\n[${sessionId}] User: ${message}${schema ? ` (schema: ${schema})` : ''}`);
 
     const startTime = Date.now();
-    const result = await chat(message, history);
+    const result = await chat(message, history, schema);
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
     // Save updated history

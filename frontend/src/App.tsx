@@ -4,6 +4,7 @@ import { FileDown } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import DateRangePicker from './components/DateRangePicker';
 import { DateRangeProvider } from './contexts/DateRangeContext';
+import { ClientProvider, useClient } from './contexts/ClientContext';
 import { exportPagePdf } from './utils/exportPdf';
 import Dashboard from './pages/Dashboard';
 import PlatformPage from './pages/PlatformPage';
@@ -19,6 +20,7 @@ import Keywords from './pages/Keywords';
 import ChangeAudit from './pages/ChangeAudit';
 import Attribution from './pages/Attribution';
 import Alerts from './pages/Alerts';
+import CustomDashboard from './pages/CustomDashboard';
 
 function PageWrapper({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -44,6 +46,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/attribution': 'Attribution',
   '/alerts': 'Alerts',
   '/forecast': 'Forecast',
+  '/custom-dashboard': 'Custom Dashboard',
 };
 
 function TopBar() {
@@ -70,37 +73,47 @@ function TopBar() {
   );
 }
 
+function AppContent() {
+  const { client } = useClient();
+  return (
+    <div className="flex h-screen overflow-hidden bg-black">
+      <Sidebar />
+      <main key={client.id} className="flex-1 ml-60 overflow-y-auto p-6 lg:p-8">
+        <TopBar />
+        <PageWrapper>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/google-ads" element={<PlatformPage platform="google" />} />
+            <Route path="/meta-ads" element={<PlatformPage platform="meta" />} />
+            <Route path="/bing-ads" element={<PlatformPage platform="bing" />} />
+            <Route path="/seo" element={<SEO />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/crm" element={<CRM />} />
+            <Route path="/budget-pacing" element={<BudgetPacing />} />
+            <Route path="/creatives" element={<Creatives />} />
+            <Route path="/keywords" element={<Keywords />} />
+            <Route path="/change-audit" element={<ChangeAudit />} />
+            <Route path="/attribution" element={<Attribution />} />
+            <Route path="/alerts" element={<Alerts />} />
+            <Route path="/forecast" element={<Forecast />} />
+            <Route path="/custom-dashboard" element={<CustomDashboard />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/chat" element={<Chat />} />
+          </Routes>
+        </PageWrapper>
+      </main>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
+      <ClientProvider>
       <DateRangeProvider>
-      <div className="flex h-screen overflow-hidden bg-black">
-        <Sidebar />
-        <main className="flex-1 ml-60 overflow-y-auto p-6 lg:p-8">
-          <TopBar />
-          <PageWrapper>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/google-ads" element={<PlatformPage platform="google" />} />
-              <Route path="/meta-ads" element={<PlatformPage platform="meta" />} />
-              <Route path="/bing-ads" element={<PlatformPage platform="bing" />} />
-              <Route path="/seo" element={<SEO />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/crm" element={<CRM />} />
-              <Route path="/budget-pacing" element={<BudgetPacing />} />
-              <Route path="/creatives" element={<Creatives />} />
-              <Route path="/keywords" element={<Keywords />} />
-              <Route path="/change-audit" element={<ChangeAudit />} />
-              <Route path="/attribution" element={<Attribution />} />
-              <Route path="/alerts" element={<Alerts />} />
-              <Route path="/forecast" element={<Forecast />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/chat" element={<Chat />} />
-            </Routes>
-          </PageWrapper>
-        </main>
-      </div>
-    </DateRangeProvider>
+        <AppContent />
+      </DateRangeProvider>
+      </ClientProvider>
     </BrowserRouter>
   );
 }
