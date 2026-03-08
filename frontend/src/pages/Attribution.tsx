@@ -36,8 +36,6 @@ export default function Attribution() {
   const { data: attribution, loading: loadingA } = useData(() => api.getAttribution(range), [range]);
   const { data: overlap, loading: loadingO } = useData(() => api.getChannelOverlap(range), [range]);
 
-  if (loadingA || loadingO) return <LoadingSpinner />;
-
   // Aggregate attribution across all months in range
   const channelAgg = useMemo(() => {
     if (!attribution) return [];
@@ -83,6 +81,8 @@ export default function Attribution() {
     });
     return Object.values(map).sort((a: any, b: any) => b.conversions - a.conversions);
   }, [overlap]);
+
+  if (loadingA || loadingO) return <LoadingSpinner />;
 
   // KPIs
   const totalConv = channelAgg.reduce((s, r) => s + r.linear, 0);

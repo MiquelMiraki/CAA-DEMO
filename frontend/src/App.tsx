@@ -71,7 +71,7 @@ function TopBar() {
       <button
         onClick={async () => {
           setExporting(true);
-          try { await exportPagePdf(pageTitle); } finally { setExporting(false); }
+          try { await exportPagePdf(pageTitle); } catch (err) { alert(`PDF export failed: ${err instanceof Error ? err.message : err}`); } finally { setExporting(false); }
         }}
         disabled={exporting}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[#C8A84E]/30 hover:text-[#C8A84E]/80 disabled:opacity-50"

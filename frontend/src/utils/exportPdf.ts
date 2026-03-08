@@ -7,26 +7,39 @@ import jsPDF from 'jspdf';
  */
 export async function exportPagePdf(pageTitle: string) {
   const main = document.querySelector('main');
-  if (!main) return;
+  if (!main) throw new Error('Page content area not found');
+
+  const mainEl = main as HTMLElement;
 
   // Temporarily hide the top bar (date picker) for cleaner export
-  const topBar = main.querySelector('.flex.justify-end.mb-4') as HTMLElement | null;
+  const topBar = mainEl.querySelector('.flex.justify-end.mb-4') as HTMLElement | null;
   if (topBar) topBar.style.display = 'none';
 
-  const canvas = await html2canvas(main as HTMLElement, {
-    backgroundColor: '#000000',
-    scale: 2,
-    useCORS: true,
-    logging: false,
-    windowWidth: 1280,
-  });
+  // Temporarily expand overflow so html2canvas captures the full scrollable content
+  const prevOverflow = mainEl.style.overflow;
+  const prevHeight = mainEl.style.height;
+  mainEl.style.overflow = 'visible';
+  mainEl.style.height = 'auto';
 
-  // Restore top bar
-  if (topBar) topBar.style.display = '';
+  let canvas: HTMLCanvasElement;
+  try {
+    canvas = await html2canvas(mainEl, {
+      backgroundColor: '#000000',
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      windowWidth: 1280,
+      scrollY: -window.scrollY,
+    });
+  } finally {
+    // Always restore styles even if capture fails
+    mainEl.style.overflow = prevOverflow;
+    mainEl.style.height = prevHeight;
+    if (topBar) topBar.style.display = '';
+  }
 
   const imgWidth = 210; // A4 width in mm
   const pageHeight = 297; // A4 height in mm
-
 
   const pdf = new jsPDF('p', 'mm', 'a4');
 

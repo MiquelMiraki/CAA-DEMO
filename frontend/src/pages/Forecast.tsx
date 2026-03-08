@@ -62,6 +62,16 @@ export default function Forecast() {
     const avgConv  = last30.reduce((s, r) => s + r.conversions, 0) / last30.length;
     const avgRev   = last30.reduce((s, r) => s + r.revenue, 0) / last30.length;
 
+    // Compute actual coefficient of variation from historical data (capped at 40%)
+    const stddev = (arr: number[], mean: number) => {
+      if (mean === 0) return 0;
+      const variance = arr.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / arr.length;
+      return Math.sqrt(variance);
+    };
+    const spendCV = Math.min(stddev(last30.map(r => r.spend), avgSpend) / (avgSpend || 1), 0.4);
+    const convCV  = Math.min(stddev(last30.map(r => r.conversions), avgConv) / (avgConv || 1), 0.4);
+    const revCV   = Math.min(stddev(last30.map(r => r.revenue), avgRev) / (avgRev || 1), 0.4);
+
     // Efficiency decay: for every 10% budget increase, ROAS drops ~2%
     const multiplier       = 1 + spendIncrease / 100;
     const efficiencyFactor = 1 - Math.max(0, spendIncrease) * 0.002;
@@ -70,15 +80,27 @@ export default function Forecast() {
     const projRev   = avgRev   * multiplier * efficiencyFactor;
     const projRoas  = projSpend > 0 ? projRev / projSpend : 0;
 
+    // Seeded pseudo-random for reproducible noise pattern
+    const seededRand = (seed: number) => {
+      const x = Math.sin(seed + 1) * 10000;
+      return x - Math.floor(x);
+    };
+
     const result = [];
     for (let i = 1; i <= forecastDays; i++) {
-      const dayNoise = 1 + Math.sin(i * 0.3) * 0.05;
+      // Weekly cycle + random noise scaled to actual historical volatility
+      const weeklyCycle = 1 + Math.sin((i / 7) * 2 * Math.PI) * 0.08;
+      const noiseSpend = 1 + (seededRand(i * 3)     - 0.5) * 2 * spendCV;
+      const noiseConv  = 1 + (seededRand(i * 3 + 1) - 0.5) * 2 * convCV;
+      const noiseRev   = 1 + (seededRand(i * 3 + 2) - 0.5) * 2 * revCV;
+      const spend   = +(projSpend * weeklyCycle * noiseSpend).toFixed(2);
+      const revenue = +(projRev   * weeklyCycle * noiseRev).toFixed(2);
       result.push({
         date: `Day +${i}`,
-        spend:       +(projSpend * dayNoise).toFixed(2),
-        conversions: Math.round(projConv * dayNoise),
-        revenue:     +(projRev * dayNoise).toFixed(2),
-        roas:        +(projRoas * dayNoise).toFixed(2),
+        spend,
+        conversions: Math.round(projConv * weeklyCycle * noiseConv),
+        revenue,
+        roas:        +(spend > 0 ? revenue / spend : projRoas).toFixed(2),
         isProjection: true,
       });
     }
