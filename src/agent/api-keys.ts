@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { executeQuery } from './snowflake-client';
 
 export interface ApiKey {
@@ -19,7 +19,7 @@ let initialized = false;
 
 /** Generate a new API key with prefix `caa_` */
 export function generateApiKey(): string {
-  return `caa_${uuidv4().replace(/-/g, '')}`;
+  return `caa_${randomUUID().replace(/-/g, '')}`;
 }
 
 /** Try to load API keys from Snowflake GOLD.API_KEYS table */
@@ -110,7 +110,7 @@ export function listApiKeys(): Omit<ApiKey, 'key'>[] {
 /** Create a new API key */
 export function createApiKey(name: string, clientSchema: string, scopes: string[] = ['read'], rateLimit = 60): ApiKey {
   const newKey: ApiKey = {
-    id: uuidv4(),
+    id: randomUUID(),
     key: generateApiKey(),
     name,
     client_schema: clientSchema,
