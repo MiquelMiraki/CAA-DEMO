@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, BarChart3, Target, Share2, Search, Globe, Users,
   TrendingUp, Settings, MessageSquareText, DollarSign, Palette,
-  Key, ClipboardList, GitBranch
+  Key, ClipboardList, GitBranch, Bell
 } from 'lucide-react';
 
 const NAV_SECTIONS = [
@@ -12,6 +12,7 @@ const NAV_SECTIONS = [
       { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
       { to: '/budget-pacing', icon: DollarSign, label: 'Budget Pacing' },
       { to: '/change-audit', icon: ClipboardList, label: 'Activity Log' },
+      { to: '/alerts', icon: Bell, label: 'Alerts' },
     ],
   },
   {

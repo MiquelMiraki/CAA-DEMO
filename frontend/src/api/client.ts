@@ -45,6 +45,7 @@ export const api = {
   getCRMLeads: (dr?: DateRange) => fetchJSON<any[]>('/data/crm-leads', dr),
   getAttribution: (dr?: DateRange) => fetchJSON<any[]>('/data/attribution', dr),
   getChannelOverlap: (dr?: DateRange) => fetchJSON<any[]>('/data/channel-overlap', dr),
+  getAlerts: (dr?: DateRange) => fetchJSON<any[]>('/data/alerts', dr),
   getForecast: (dr?: DateRange) => fetchJSON<any[]>('/data/forecast', dr),
   chat: async (message: string, sessionId = 'default') => {
     const res = await fetch(`${API_BASE}/chat`, {

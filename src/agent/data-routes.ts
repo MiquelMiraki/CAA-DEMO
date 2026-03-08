@@ -286,6 +286,17 @@ router.get('/channel-overlap', async (req, res) => {
   }
 });
 
+// Alerts
+router.get('/alerts', async (req, res) => {
+  try {
+    let sql = `SELECT * FROM GOLD.ALERTS WHERE 1=1${dateCondition(req, 'ALERT_DATETIME')} ORDER BY ALERT_DATETIME DESC`;
+    const result = await executeQuery(sql);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
 // Forecast base
 router.get('/forecast', async (req, res) => {
   try {
