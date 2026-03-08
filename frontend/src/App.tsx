@@ -23,6 +23,7 @@ import Alerts from './pages/Alerts';
 import CustomDashboard from './pages/CustomDashboard';
 import PeriodComparison from './pages/PeriodComparison';
 import Goals from './pages/Goals';
+import OnboardingWizard, { isOnboardingComplete } from './components/OnboardingWizard';
 
 function PageWrapper({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -79,8 +80,13 @@ function TopBar() {
 
 function AppContent() {
   const { client } = useClient();
+  const [showOnboarding, setShowOnboarding] = useState(() => !isOnboardingComplete(client.id));
+
   return (
     <div className="flex h-screen overflow-hidden bg-black">
+      {showOnboarding && (
+        <OnboardingWizard clientId={client.id} onComplete={() => setShowOnboarding(false)} />
+      )}
       <Sidebar />
       <main key={client.id} className="flex-1 ml-60 overflow-y-auto p-6 lg:p-8">
         <TopBar />

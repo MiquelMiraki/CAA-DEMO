@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Eye, EyeOff, CheckCircle, AlertCircle, Save, RefreshCw } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle, AlertCircle, Save, RefreshCw, Plug } from 'lucide-react';
+import { resetOnboarding } from '../components/OnboardingWizard';
+import { useClient } from '../contexts/ClientContext';
 
 /* ── Design tokens ─────────────────────────────────────────────── */
 const colors = {
@@ -105,6 +107,7 @@ type ConnectionStatus = 'idle' | 'testing' | 'connected' | 'error';
 
 /* ── Component ─────────────────────────────────────────────────── */
 export default function Settings() {
+  const { client } = useClient();
   const [configs, setConfigs] = useState<Record<string, Record<string, string>>>({});
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
   const [statuses, setStatuses] = useState<Record<string, ConnectionStatus>>({});
@@ -376,6 +379,25 @@ export default function Settings() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* ── Setup Wizard ───────────────────────────────────────── */}
+      <div className="rounded-xl p-5" style={{ background: colors.surface, border: `1px solid ${colors.border}` }}>
+        <h3 className="text-white text-sm font-medium mb-1">Setup Wizard</h3>
+        <p style={{ color: colors.muted }} className="text-xs mb-4">
+          Re-run the onboarding wizard to reconfigure your platform connections.
+        </p>
+        <button
+          onClick={() => {
+            resetOnboarding(client.id);
+            window.location.reload();
+          }}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-white/[0.06]"
+          style={{ border: `1px solid ${colors.border}`, color: colors.secondary }}
+        >
+          <Plug className="w-4 h-4" />
+          Re-run Setup Wizard
+        </button>
       </div>
     </div>
   );
