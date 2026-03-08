@@ -3,13 +3,22 @@ import cors from 'cors';
 import { connectSnowflake, disconnectSnowflake } from './snowflake-client';
 import { chat, ChatMessage } from './agent';
 import dataRoutes from './data-routes';
+import publicApi from './public-api';
+import apiDocs from './api-docs';
+import { initApiKeys } from './api-keys';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Data API routes
+// Internal data API routes (used by frontend — no auth required)
 app.use('/api/data', dataRoutes);
+
+// Public API v1 (requires X-API-Key authentication)
+app.use('/api/v1', publicApi);
+
+// API documentation (Swagger UI)
+app.use('/api/docs', apiDocs);
 
 // In-memory session store (simple demo — use Redis in production)
 const sessions = new Map<string, ChatMessage[]>();
@@ -80,12 +89,17 @@ async function start() {
   await connectSnowflake();
   console.log('Snowflake connected.');
 
+  // Initialize API keys for public API
+  await initApiKeys();
+
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`\nAnalytical Agent API running at http://localhost:${PORT}`);
     console.log('Endpoints:');
     console.log(`  POST /api/chat    — { message: "...", sessionId?: "..." }`);
     console.log(`  POST /api/reset   — { sessionId?: "..." }`);
-    console.log(`  GET  /api/health  — health check\n`);
+    console.log(`  GET  /api/health  — health check`);
+    console.log(`  GET  /api/v1/*    — Public API (requires X-API-Key header)`);
+    console.log(`  GET  /api/docs    — Swagger UI documentation\n`);
   });
 }
 

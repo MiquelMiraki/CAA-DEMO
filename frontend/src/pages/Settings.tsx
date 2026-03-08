@@ -1,9 +1,11 @@
-import { useState } from 'react';
-import { Eye, EyeOff, CheckCircle, AlertCircle, Save, RefreshCw, Plug, Sun, Moon, Bell } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Eye, EyeOff, CheckCircle, AlertCircle, Save, RefreshCw, Plug, Sun, Moon, Bell, KeyRound, Copy, Trash2, Plus, ExternalLink } from 'lucide-react';
 import { resetOnboarding } from '../components/OnboardingWizard';
 import { useClient } from '../contexts/ClientContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage, type Lang } from '../contexts/LanguageContext';
+
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 /* ── Design tokens ─────────────────────────────────────────────── */
 const colors = {
@@ -515,6 +517,9 @@ export default function Settings() {
         </div>
       </div>
 
+      {/* ── Public API ─────────────────────────────────────────── */}
+      <ApiKeysSection inputClasses={inputClasses} inputFocusStyle={inputFocusStyle} inputStyle={inputStyle} />
+
       {/* ── Setup Wizard ───────────────────────────────────────── */}
       <div className="rounded-xl p-5" style={{ background: colors.surface, border: `1px solid ${colors.border}` }}>
         <h3 className="text-white text-sm font-medium mb-1">Setup Wizard</h3>
@@ -533,6 +538,259 @@ export default function Settings() {
           Re-run Setup Wizard
         </button>
       </div>
+    </div>
+  );
+}
+
+/* ── API Keys management section ───────────────────────────── */
+interface ApiKeySectionProps {
+  inputClasses: string;
+  inputFocusStyle: string;
+  inputStyle: Record<string, string>;
+}
+
+interface ApiKeyRecord {
+  id: string;
+  key: string;
+  name: string;
+  client_schema: string;
+  scopes: string[];
+  rate_limit: number;
+  created_at: string;
+  last_used_at: string | null;
+}
+
+function ApiKeysSection({ inputClasses, inputFocusStyle, inputStyle }: ApiKeySectionProps) {
+  const [keys, setKeys] = useState<ApiKeyRecord[]>([]);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [newKeySchema, setNewKeySchema] = useState('GOLD');
+  const [newKeyScopes, setNewKeyScopes] = useState<string[]>(['read']);
+  const [newKeyRate, setNewKeyRate] = useState(60);
+  const [createdKey, setCreatedKey] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [masterKey, setMasterKey] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  const headers = () => ({
+    'Content-Type': 'application/json',
+    'X-API-Key': masterKey,
+  });
+
+  const fetchKeys = async () => {
+    if (!masterKey) return;
+    try {
+      const res = await fetch(`${API_BASE}/v1/keys`, { headers: headers() });
+      if (res.ok) {
+        const json = await res.json();
+        setKeys(json.data || []);
+      }
+    } catch { /* ignore */ }
+  };
+
+  const createKey = async () => {
+    if (!newKeyName || !masterKey) return;
+    try {
+      const res = await fetch(`${API_BASE}/v1/keys`, {
+        method: 'POST',
+        headers: headers(),
+        body: JSON.stringify({
+          name: newKeyName,
+          client_schema: newKeySchema,
+          scopes: newKeyScopes,
+          rate_limit: newKeyRate,
+        }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setCreatedKey(json.data.key);
+        setNewKeyName('');
+        setShowForm(false);
+        fetchKeys();
+      }
+    } catch { /* ignore */ }
+  };
+
+  const revokeKey = async (id: string) => {
+    if (!masterKey) return;
+    try {
+      await fetch(`${API_BASE}/v1/keys/${id}`, { method: 'DELETE', headers: headers() });
+      fetchKeys();
+    } catch { /* ignore */ }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  useEffect(() => { if (masterKey) fetchKeys(); }, [masterKey]);
+
+  const backendUrl = API_BASE.startsWith('http') ? API_BASE : window.location.origin + API_BASE;
+
+  return (
+    <div className="rounded-xl p-5" style={{ background: colors.surface, border: `1px solid ${colors.border}` }}>
+      <div className="flex items-center gap-2 mb-1">
+        <KeyRound className="w-4 h-4" style={{ color: colors.gold }} />
+        <h3 className="text-white text-sm font-medium">Public API</h3>
+      </div>
+      <p style={{ color: colors.muted }} className="text-xs mb-4">
+        Manage API keys for external integrations. See <a href={`${backendUrl}/docs`} target="_blank" rel="noreferrer" className="underline hover:text-[var(--color-gold)]">API Docs</a> for endpoints.
+      </p>
+
+      {/* Master key input */}
+      <div className="mb-4">
+        <label className="block text-xs mb-1.5" style={{ color: colors.secondary }}>
+          Admin API Key (to manage keys)
+        </label>
+        <input
+          type="password"
+          placeholder="caa_xxxxxxxx..."
+          value={masterKey}
+          onChange={e => setMasterKey(e.target.value)}
+          className={`${inputClasses} ${inputFocusStyle}`}
+          style={inputStyle}
+        />
+      </div>
+
+      {/* Created key banner */}
+      {createdKey && (
+        <div className="mb-4 p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10">
+          <p className="text-xs text-emerald-400 mb-1">New API key created — copy it now, it won't be shown again:</p>
+          <div className="flex items-center gap-2">
+            <code className="text-xs text-white bg-black/50 px-2 py-1 rounded flex-1 truncate">{createdKey}</code>
+            <button onClick={() => copyToClipboard(createdKey)} className="text-emerald-400 hover:text-emerald-300">
+              <Copy className="w-4 h-4" />
+            </button>
+          </div>
+          {copied && <p className="text-xs text-emerald-400 mt-1">Copied!</p>}
+        </div>
+      )}
+
+      {/* Keys table */}
+      {keys.length > 0 && (
+        <div className="mb-4 rounded-lg overflow-hidden border" style={{ borderColor: colors.border }}>
+          <table className="w-full text-xs">
+            <thead>
+              <tr style={{ background: colors.bg }}>
+                <th className="text-left px-3 py-2 font-medium" style={{ color: colors.secondary }}>Name</th>
+                <th className="text-left px-3 py-2 font-medium" style={{ color: colors.secondary }}>Key</th>
+                <th className="text-left px-3 py-2 font-medium" style={{ color: colors.secondary }}>Schema</th>
+                <th className="text-left px-3 py-2 font-medium" style={{ color: colors.secondary }}>Scopes</th>
+                <th className="text-left px-3 py-2 font-medium" style={{ color: colors.secondary }}>Rate</th>
+                <th className="px-3 py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {keys.map(k => (
+                <tr key={k.id} className="border-t" style={{ borderColor: colors.border }}>
+                  <td className="px-3 py-2 text-white">{k.name}</td>
+                  <td className="px-3 py-2 font-mono" style={{ color: colors.muted }}>{k.key}</td>
+                  <td className="px-3 py-2" style={{ color: colors.secondary }}>{k.client_schema}</td>
+                  <td className="px-3 py-2" style={{ color: colors.secondary }}>{k.scopes?.join(', ')}</td>
+                  <td className="px-3 py-2" style={{ color: colors.secondary }}>{k.rate_limit}/min</td>
+                  <td className="px-3 py-2">
+                    <button onClick={() => revokeKey(k.id)} className="text-red-400/60 hover:text-red-400 transition-colors">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Create key form */}
+      {showForm ? (
+        <div className="space-y-3 p-4 rounded-lg border" style={{ borderColor: colors.border, background: colors.bg }}>
+          <div>
+            <label className="block text-xs mb-1.5" style={{ color: colors.secondary }}>Key Name</label>
+            <input
+              type="text"
+              placeholder="e.g. Looker Studio Integration"
+              value={newKeyName}
+              onChange={e => setNewKeyName(e.target.value)}
+              className={`${inputClasses} ${inputFocusStyle}`}
+              style={inputStyle}
+            />
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs mb-1.5" style={{ color: colors.secondary }}>Schema Access</label>
+              <input
+                type="text"
+                value={newKeySchema}
+                onChange={e => setNewKeySchema(e.target.value)}
+                className={`${inputClasses} ${inputFocusStyle}`}
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label className="block text-xs mb-1.5" style={{ color: colors.secondary }}>Scopes</label>
+              <select
+                value={newKeyScopes.join(',')}
+                onChange={e => setNewKeyScopes(e.target.value.split(','))}
+                className={`${inputClasses} ${inputFocusStyle}`}
+                style={inputStyle}
+              >
+                <option value="read">Read only</option>
+                <option value="read,write">Read + Write</option>
+                <option value="read,write,admin">Admin</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs mb-1.5" style={{ color: colors.secondary }}>Rate (req/min)</label>
+              <input
+                type="number"
+                value={newKeyRate}
+                onChange={e => setNewKeyRate(parseInt(e.target.value) || 60)}
+                className={`${inputClasses} ${inputFocusStyle}`}
+                style={inputStyle}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={createKey}
+              disabled={!newKeyName || !masterKey}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-black font-medium transition-colors hover:brightness-110 disabled:opacity-50"
+              style={{ background: colors.gold }}
+            >
+              <Plus className="w-4 h-4" />
+              Create Key
+            </button>
+            <button
+              onClick={() => setShowForm(false)}
+              className="px-4 py-2 rounded-lg text-sm transition-colors hover:bg-white/[0.06]"
+              style={{ border: `1px solid ${colors.border}`, color: colors.secondary }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-white/[0.06]"
+            style={{ border: `1px solid ${colors.border}`, color: colors.secondary }}
+          >
+            <Plus className="w-4 h-4" />
+            Create API Key
+          </button>
+          <a
+            href={`${backendUrl}/docs`}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-white/[0.06]"
+            style={{ border: `1px solid ${colors.border}`, color: colors.secondary }}
+          >
+            <ExternalLink className="w-4 h-4" />
+            API Documentation
+          </a>
+        </div>
+      )}
     </div>
   );
 }
