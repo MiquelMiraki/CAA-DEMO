@@ -103,6 +103,34 @@ select {
 }
 select option { background: #0A0A0A; color: #fff; }
 
+/* Print styles — used by PDF export button */
+@media print {
+  /* Hide everything except the main content area */
+  nav, aside, header, footer,
+  [data-sidebar], [data-topbar] { display: none !important; }
+
+  /* Sidebar: 240px fixed column — hide it */
+  .ml-60 { margin-left: 0 !important; }
+
+  /* Make main fill the full page */
+  body, html, #root { height: auto !important; overflow: visible !important; }
+  main {
+    margin-left: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+    padding: 0 !important;
+  }
+
+  /* Hide the top bar (date picker + buttons) */
+  .flex.justify-end.mb-4 { display: none !important; }
+
+  /* Page breaks */
+  .space-y-6 > * { break-inside: avoid; }
+
+  /* Force dark background to print */
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
 /* React Grid Layout overrides for dark theme */
 .react-grid-item.react-grid-placeholder {
   background: rgba(200, 168, 78, 0.1) !important;
