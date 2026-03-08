@@ -4,51 +4,84 @@ snowflake.configure({ logLevel: 'OFF' });
 
 let connection: snowflake.Connection | null = null;
 
-function getConnection(): snowflake.Connection {
-  if (!connection) {
-    const account = process.env.SNOWFLAKE_ACCOUNT;
-    const username = process.env.SNOWFLAKE_USERNAME;
-    const password = process.env.SNOWFLAKE_PASSWORD;
-    const database = process.env.SNOWFLAKE_DATABASE;
-    const warehouse = process.env.SNOWFLAKE_WAREHOUSE;
+function createConnection(): snowflake.Connection {
+  const account = process.env.SNOWFLAKE_ACCOUNT;
+  const username = process.env.SNOWFLAKE_USERNAME;
+  const password = process.env.SNOWFLAKE_PASSWORD;
+  const database = process.env.SNOWFLAKE_DATABASE;
+  const warehouse = process.env.SNOWFLAKE_WAREHOUSE;
 
-    if (!account || !username || !password || !database || !warehouse) {
-      throw new Error('Missing Snowflake environment variables');
-    }
-
-    const schema = process.env.SNOWFLAKE_DEFAULT_SCHEMA || 'GOLD';
-    connection = snowflake.createConnection({ account, username, password, database, warehouse, schema });
+  if (!account || !username || !password || !database || !warehouse) {
+    throw new Error('Missing Snowflake environment variables');
   }
-  return connection;
+
+  const schema = process.env.SNOWFLAKE_DEFAULT_SCHEMA || 'GOLD';
+  return snowflake.createConnection({ account, username, password, database, warehouse, schema });
 }
 
-export async function connectSnowflake(): Promise<void> {
-  const conn = getConnection();
+async function connectNew(): Promise<snowflake.Connection> {
+  const conn = createConnection();
   return new Promise((resolve, reject) => {
     conn.connect((err) => {
       if (err) reject(new Error(`Snowflake connection failed: ${err.message}`));
-      else resolve();
+      else resolve(conn);
     });
   });
 }
 
+export async function connectSnowflake(): Promise<void> {
+  connection = await connectNew();
+}
+
+async function getActiveConnection(): Promise<snowflake.Connection> {
+  if (!connection || !connection.isUp()) {
+    console.log('[Snowflake] Connection lost — reconnecting...');
+    try {
+      connection = await connectNew();
+      console.log('[Snowflake] Reconnected.');
+    } catch (err) {
+      connection = null;
+      throw err;
+    }
+  }
+  return connection;
+}
+
 export async function executeQuery(sql: string): Promise<{ columns: string[]; rows: Record<string, unknown>[]; rowCount: number }> {
-  const conn = getConnection();
+  const conn = await getActiveConnection();
 
   return new Promise((resolve, reject) => {
     conn.execute({
       sqlText: sql,
-      complete: (err, stmt, rows) => {
+      complete: async (err, stmt, rows) => {
         if (err) {
+          // If the connection was terminated, reconnect and retry once
+          if (err.message?.includes('terminated') || err.message?.includes('closed') || err.message?.includes('lost')) {
+            console.log('[Snowflake] Query failed with connection error — retrying after reconnect...');
+            try {
+              connection = null;
+              const freshConn = await getActiveConnection();
+              freshConn.execute({
+                sqlText: sql,
+                complete: (err2, stmt2, rows2) => {
+                  if (err2) {
+                    reject(new Error(`SQL Error: ${err2.message}\nQuery: ${sql}`));
+                    return;
+                  }
+                  const columns = (stmt2?.getColumns() ?? []).map((c: { getName: () => string }) => c.getName());
+                  resolve({ columns, rows: (rows2 || []) as Record<string, unknown>[], rowCount: rows2?.length || 0 });
+                },
+              });
+            } catch (reconnErr) {
+              reject(new Error(`SQL Error: ${err.message}\nQuery: ${sql}`));
+            }
+            return;
+          }
           reject(new Error(`SQL Error: ${err.message}\nQuery: ${sql}`));
           return;
         }
         const columns = (stmt?.getColumns() ?? []).map((c: { getName: () => string }) => c.getName());
-        resolve({
-          columns,
-          rows: (rows || []) as Record<string, unknown>[],
-          rowCount: rows?.length || 0,
-        });
+        resolve({ columns, rows: (rows || []) as Record<string, unknown>[], rowCount: rows?.length || 0 });
       },
     });
   });
