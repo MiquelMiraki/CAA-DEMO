@@ -21,6 +21,18 @@ export default function Keywords() {
   const { range } = useDateRange();
   const { data: keywords, loading } = useData(() => api.getKeywords(range), [range]);
   const [filter, setFilter] = useState('');
+  const [matchFilter, setMatchFilter] = useState('');
+  const [channelFilter, setChannelFilter] = useState('');
+
+  const matchTypes = useMemo(() => {
+    if (!keywords) return [];
+    return [...new Set(keywords.map((r: any) => r.MATCH_TYPE as string))].filter(Boolean).sort();
+  }, [keywords]);
+
+  const channels = useMemo(() => {
+    if (!keywords) return [];
+    return [...new Set(keywords.map((r: any) => r.CHANNEL as string))].filter(Boolean).sort();
+  }, [keywords]);
 
   const sorted = useMemo(() => {
     if (!keywords) return [];
@@ -28,10 +40,15 @@ export default function Keywords() {
   }, [keywords]);
 
   const filtered = useMemo(() => {
-    if (!filter.trim()) return sorted;
-    const q = filter.toLowerCase();
-    return sorted.filter((r: any) => (r.KEYWORD || '').toLowerCase().includes(q));
-  }, [sorted, filter]);
+    let rows = sorted;
+    if (filter.trim()) {
+      const q = filter.toLowerCase();
+      rows = rows.filter((r: any) => (r.KEYWORD || '').toLowerCase().includes(q));
+    }
+    if (matchFilter) rows = rows.filter((r: any) => r.MATCH_TYPE === matchFilter);
+    if (channelFilter) rows = rows.filter((r: any) => r.CHANNEL === channelFilter);
+    return rows;
+  }, [sorted, filter, matchFilter, channelFilter]);
 
   if (loading) return <LoadingSpinner />;
 
@@ -144,15 +161,31 @@ export default function Keywords() {
 
       {/* Keywords Table */}
       <ChartCard title="All Keywords" subtitle={`${filtered.length} keywords · sorted by spend`} onExport={() => exportCsv(filtered, 'keywords')}>
-        {/* Search filter */}
-        <div className="mb-4">
+        {/* Filters */}
+        <div className="flex flex-wrap gap-3 mb-4">
           <input
             type="text"
             placeholder="Search keywords..."
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="bg-[#0A0A0A] border border-[#1A1A1A] rounded-lg px-3 py-2 text-sm text-white placeholder-[#4A4A4A] focus:border-[#C8A84E]/50 focus:outline-none w-full max-w-sm transition-colors"
+            className="bg-[#0A0A0A] border border-[#1A1A1A] rounded-lg px-3 py-2 text-sm text-white placeholder-[#4A4A4A] focus:border-[#C8A84E]/50 focus:outline-none flex-1 min-w-[200px] max-w-sm transition-colors"
           />
+          <select
+            value={matchFilter}
+            onChange={(e) => setMatchFilter(e.target.value)}
+            className="bg-[#0A0A0A] border border-[#1A1A1A] rounded-lg px-3 py-2 text-sm text-white focus:border-[#C8A84E]/50 focus:outline-none transition-colors"
+          >
+            <option value="">All Match Types</option>
+            {matchTypes.map(mt => <option key={mt} value={mt}>{mt}</option>)}
+          </select>
+          <select
+            value={channelFilter}
+            onChange={(e) => setChannelFilter(e.target.value)}
+            className="bg-[#0A0A0A] border border-[#1A1A1A] rounded-lg px-3 py-2 text-sm text-white focus:border-[#C8A84E]/50 focus:outline-none transition-colors"
+          >
+            <option value="">All Channels</option>
+            {channels.map(ch => <option key={ch} value={ch}>{ch}</option>)}
+          </select>
         </div>
 
         <div className="overflow-x-auto">
