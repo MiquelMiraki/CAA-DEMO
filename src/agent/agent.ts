@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { executeQuery, listGoldTables, getTableSchema } from './snowflake-client';
-import { buildSchemaContext, SYSTEM_PROMPT } from './schema-context';
+import { buildSchemaContext, getSystemPrompt } from './schema-context';
 
 const MAX_TOOL_ROUNDS = 8;
 
@@ -110,7 +110,7 @@ export async function chat(
   const client = new OpenAI({ apiKey });
 
   const activeSchema = schema || process.env.SNOWFLAKE_DEFAULT_SCHEMA || 'GOLD';
-  const systemPrompt = `${SYSTEM_PROMPT}\n\n${buildSchemaContext(activeSchema)}`;
+  const systemPrompt = `${getSystemPrompt(activeSchema)}\n\n${buildSchemaContext(activeSchema)}`;
 
   // Build messages
   const messages: OpenAI.ChatCompletionMessageParam[] = [

@@ -6,3 +6,5 @@ mcp.json
 .DS_Store
 frontend/dist/
 frontend/node_modules/
+.keys/
+.railway/

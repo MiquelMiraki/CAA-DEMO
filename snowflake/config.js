@@ -2,14 +2,36 @@ const snowflake = require('snowflake-sdk');
 snowflake.configure({ logLevel: 'OFF' });
 
 function getConnection() {
-  require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env') });
-  return snowflake.createConnection({
+  const path = require('path');
+  const fs = require('fs');
+  require('dotenv').config({ path: path.resolve(__dirname, '..', '.env') });
+
+  const config = {
     account: process.env.SNOWFLAKE_ACCOUNT,
     username: process.env.SNOWFLAKE_USERNAME,
-    password: process.env.SNOWFLAKE_PASSWORD,
     database: process.env.SNOWFLAKE_DATABASE,
     warehouse: process.env.SNOWFLAKE_WAREHOUSE,
-  });
+  };
+
+  // Prefer key-pair auth (no MFA, no codes). Fall back to password+TOTP if no key.
+  // Production: SNOWFLAKE_PRIVATE_KEY (raw content env var). Local dev: SNOWFLAKE_PRIVATE_KEY_PATH.
+  const rawKey = process.env.SNOWFLAKE_PRIVATE_KEY;
+  const keyPath = process.env.SNOWFLAKE_PRIVATE_KEY_PATH;
+  if (rawKey || keyPath) {
+    let pk;
+    if (rawKey) {
+      pk = rawKey.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n');
+    } else {
+      const resolvedPath = path.isAbsolute(keyPath) ? keyPath : path.resolve(__dirname, '..', keyPath);
+      pk = fs.readFileSync(resolvedPath, 'utf8');
+    }
+    config.authenticator = 'SNOWFLAKE_JWT';
+    config.privateKey = pk;
+  } else {
+    config.password = process.env.SNOWFLAKE_PASSWORD;
+    if (process.env.SNOWFLAKE_PASSCODE) config.passcode = process.env.SNOWFLAKE_PASSCODE;
+  }
+  return snowflake.createConnection(config);
 }
 
 function connect(conn) {

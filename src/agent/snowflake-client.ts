@@ -1,4 +1,6 @@
 import snowflake from 'snowflake-sdk';
+import * as fs from 'fs';
+import * as path from 'path';
 
 snowflake.configure({ logLevel: 'OFF' });
 
@@ -7,16 +9,41 @@ let connection: snowflake.Connection | null = null;
 function createConnection(): snowflake.Connection {
   const account = process.env.SNOWFLAKE_ACCOUNT;
   const username = process.env.SNOWFLAKE_USERNAME;
-  const password = process.env.SNOWFLAKE_PASSWORD;
   const database = process.env.SNOWFLAKE_DATABASE;
   const warehouse = process.env.SNOWFLAKE_WAREHOUSE;
 
-  if (!account || !username || !password || !database || !warehouse) {
+  if (!account || !username || !database || !warehouse) {
     throw new Error('Missing Snowflake environment variables');
   }
 
   const schema = process.env.SNOWFLAKE_DEFAULT_SCHEMA || 'GOLD';
-  return snowflake.createConnection({ account, username, password, database, warehouse, schema });
+  const opts: snowflake.ConnectionOptions = { account, username, database, warehouse, schema };
+
+  // Prefer key-pair auth (no MFA, reliable reconnects). Fall back to password+TOTP if no key configured.
+  // Production (Railway): use SNOWFLAKE_PRIVATE_KEY env var with raw key content.
+  // Local dev: use SNOWFLAKE_PRIVATE_KEY_PATH pointing to a .p8 file.
+  const rawKey = process.env.SNOWFLAKE_PRIVATE_KEY;
+  const keyPath = process.env.SNOWFLAKE_PRIVATE_KEY_PATH;
+  if (rawKey || keyPath) {
+    let pk: string;
+    if (rawKey) {
+      // Allow stripping surrounding quotes and unescaping literal \n that some env stores require
+      pk = rawKey.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n');
+    } else {
+      const resolved = path.isAbsolute(keyPath!) ? keyPath! : path.resolve(process.cwd(), keyPath!);
+      pk = fs.readFileSync(resolved, 'utf8');
+    }
+    (opts as snowflake.ConnectionOptions & { authenticator?: string; privateKey?: string }).authenticator = 'SNOWFLAKE_JWT';
+    (opts as snowflake.ConnectionOptions & { authenticator?: string; privateKey?: string }).privateKey = pk;
+  } else {
+    const password = process.env.SNOWFLAKE_PASSWORD;
+    if (!password) throw new Error('Missing SNOWFLAKE_PASSWORD or SNOWFLAKE_PRIVATE_KEY_PATH');
+    (opts as snowflake.ConnectionOptions & { password?: string }).password = password;
+    if (process.env.SNOWFLAKE_PASSCODE) {
+      (opts as snowflake.ConnectionOptions & { passcode?: string }).passcode = process.env.SNOWFLAKE_PASSCODE;
+    }
+  }
+  return snowflake.createConnection(opts);
 }
 
 async function connectNew(): Promise<snowflake.Connection> {
