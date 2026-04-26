@@ -6,6 +6,22 @@ snowflake.configure({ logLevel: 'OFF' });
 
 let connection: snowflake.Connection | null = null;
 
+/**
+ * Normalize a private key from an env var into a PEM string the snowflake-sdk can use.
+ * Accepts:
+ *   - Plain PEM with real newlines (best case)
+ *   - PEM with literal \n escapes (some env stores)
+ *   - PEM with CRLF line endings (Windows-pasted)
+ *   - Base64-encoded PEM (no BEGIN marker — safest, no newline issues)
+ */
+function normalizePrivateKey(raw: string): string {
+  let s = raw.trim().replace(/^["']|["']$/g, '');
+  if (!s.includes('-----BEGIN')) {
+    s = Buffer.from(s, 'base64').toString('utf8');
+  }
+  return s.replace(/\\n/g, '\n').replace(/\r/g, '').trim();
+}
+
 function createConnection(): snowflake.Connection {
   const account = process.env.SNOWFLAKE_ACCOUNT;
   const username = process.env.SNOWFLAKE_USERNAME;
@@ -27,8 +43,7 @@ function createConnection(): snowflake.Connection {
   if (rawKey || keyPath) {
     let pk: string;
     if (rawKey) {
-      // Allow stripping surrounding quotes and unescaping literal \n that some env stores require
-      pk = rawKey.replace(/^["']|["']$/g, '').replace(/\\n/g, '\n');
+      pk = normalizePrivateKey(rawKey);
     } else {
       const resolved = path.isAbsolute(keyPath!) ? keyPath! : path.resolve(process.cwd(), keyPath!);
       pk = fs.readFileSync(resolved, 'utf8');
