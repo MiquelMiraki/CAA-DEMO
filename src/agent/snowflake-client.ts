@@ -18,7 +18,8 @@ function createConnection(): snowflake.Connection {
   }
 
   const schema = process.env.SNOWFLAKE_DEFAULT_SCHEMA || 'GOLD';
-  const opts: snowflake.ConnectionOptions = { account, username, database, warehouse, schema };
+  const role = process.env.SNOWFLAKE_ROLE || 'ACCOUNTADMIN';
+  const opts: snowflake.ConnectionOptions = { account, username, database, warehouse, schema, role };
 
   // Auth: password by default (production). Use key-pair only if a local file is provided
   // via SNOWFLAKE_PRIVATE_KEY_PATH (useful when MFA blocks password locally).
