@@ -45,9 +45,11 @@ function createConnection(): snowflake.Connection {
       : fs.readFileSync(path.isAbsolute(keyPath!) ? keyPath! : path.resolve(process.cwd(), keyPath!), 'utf8');
     (opts as snowflake.ConnectionOptions & { authenticator?: string; privateKey?: string }).authenticator = 'SNOWFLAKE_JWT';
     (opts as snowflake.ConnectionOptions & { authenticator?: string; privateKey?: string }).privateKey = pk;
+    console.log(`[Snowflake] Auth=JWT (${rawKey ? `env var, raw len=${rawKey.length}` : 'file path'})`);
   } else {
     if (!password) throw new Error('Missing SNOWFLAKE_PASSWORD or key-pair env vars');
     (opts as snowflake.ConnectionOptions & { password?: string }).password = password;
+    console.log('[Snowflake] Auth=password (no SNOWFLAKE_PRIVATE_KEY env var or file path found)');
     if (process.env.SNOWFLAKE_PASSCODE) {
       (opts as snowflake.ConnectionOptions & { passcode?: string }).passcode = process.env.SNOWFLAKE_PASSCODE;
     }
