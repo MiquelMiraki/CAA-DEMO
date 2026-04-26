@@ -50,6 +50,18 @@ async function connectNew(): Promise<snowflake.Connection> {
 
 export async function connectSnowflake(): Promise<void> {
   connection = await connectNew();
+  try {
+    const r = await executeQuery(
+      "SELECT CURRENT_USER() AS U, CURRENT_ROLE() AS R, CURRENT_WAREHOUSE() AS W, CURRENT_DATABASE() AS D"
+    );
+    console.log('[Snowflake] Session:', r.rows[0]);
+    const s = await executeQuery(
+      "SELECT SCHEMA_NAME FROM CAA_DB.INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME LIKE 'GOLD%' ORDER BY SCHEMA_NAME"
+    );
+    console.log('[Snowflake] Visible GOLD schemas:', s.rows.map((x) => x.SCHEMA_NAME));
+  } catch (e) {
+    console.warn('[Snowflake] Diag query failed:', (e as Error).message);
+  }
 }
 
 async function getActiveConnection(): Promise<snowflake.Connection> {
