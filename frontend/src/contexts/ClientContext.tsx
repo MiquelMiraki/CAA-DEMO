@@ -23,11 +23,14 @@ const DEFAULT_CLIENT: Client = { id: 'GOLD', name: 'Default' };
 export function ClientProvider({ children }: { children: ReactNode }) {
   const [clients, setClients] = useState<Client[]>([DEFAULT_CLIENT]);
   const [client, setClientState] = useState<Client>(() => {
+    let initial: Client = DEFAULT_CLIENT;
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) return JSON.parse(stored);
+      if (stored) initial = JSON.parse(stored);
     } catch { /* ignore */ }
-    return DEFAULT_CLIENT;
+    // Sync the global API client schema before any child component mounts and fetches.
+    setApiClient(initial.id);
+    return initial;
   });
   const [loading, setLoading] = useState(true);
 
@@ -40,6 +43,7 @@ export function ClientProvider({ children }: { children: ReactNode }) {
           // If stored client no longer exists, reset to first
           const stored = client.id;
           if (!list.find(c => c.id === stored)) {
+            setApiClient(list[0].id);
             setClientState(list[0]);
             localStorage.setItem(STORAGE_KEY, JSON.stringify(list[0]));
           }
@@ -49,10 +53,11 @@ export function ClientProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  // Sync global API client on mount and when client changes
-  useEffect(() => { setApiClient(client.id); }, [client.id]);
-
   const setClient = (c: Client) => {
+    // Update the global API client schema synchronously, before React re-renders
+    // and child components remount + refetch. Otherwise the first fetch after a
+    // client switch reads the previous schema.
+    setApiClient(c.id);
     setClientState(c);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(c));
   };
