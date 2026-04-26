@@ -1,31 +1,15 @@
 import snowflake from 'snowflake-sdk';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as crypto from 'crypto';
 
 snowflake.configure({ logLevel: 'OFF' });
 
 let connection: snowflake.Connection | null = null;
 
-/**
- * Normalize a private key from an env var into a PEM string the snowflake-sdk can use.
- * Accepts:
- *   - Plain PEM with real newlines (best case)
- *   - PEM with literal \n escapes (some env stores)
- *   - PEM with CRLF line endings (Windows-pasted)
- *   - Base64-encoded PEM (no BEGIN marker — safest, no newline issues)
- */
-function normalizePrivateKey(raw: string): string {
-  let s = raw.trim().replace(/^["']|["']$/g, '');
-  if (!s.includes('-----BEGIN')) {
-    s = Buffer.from(s, 'base64').toString('utf8');
-  }
-  return s.replace(/\\n/g, '\n').replace(/\r/g, '').trim();
-}
-
 function createConnection(): snowflake.Connection {
   const account = process.env.SNOWFLAKE_ACCOUNT;
   const username = process.env.SNOWFLAKE_USERNAME;
+  const password = process.env.SNOWFLAKE_PASSWORD;
   const database = process.env.SNOWFLAKE_DATABASE;
   const warehouse = process.env.SNOWFLAKE_WAREHOUSE;
 
@@ -36,34 +20,15 @@ function createConnection(): snowflake.Connection {
   const schema = process.env.SNOWFLAKE_DEFAULT_SCHEMA || 'GOLD';
   const opts: snowflake.ConnectionOptions = { account, username, database, warehouse, schema };
 
-  // Prefer key-pair auth (no MFA, reliable reconnects). Fall back to password+TOTP if no key configured.
-  // Production (Railway): use SNOWFLAKE_PRIVATE_KEY env var with raw key content.
-  // Local dev: use SNOWFLAKE_PRIVATE_KEY_PATH pointing to a .p8 file.
-  const rawKey = process.env.SNOWFLAKE_PRIVATE_KEY;
+  // Auth: password by default (production). Use key-pair only if a local file is provided
+  // via SNOWFLAKE_PRIVATE_KEY_PATH (useful when MFA blocks password locally).
   const keyPath = process.env.SNOWFLAKE_PRIVATE_KEY_PATH;
-  if (rawKey || keyPath) {
-    let pk: string;
-    if (rawKey) {
-      pk = normalizePrivateKey(rawKey);
-      console.log(`[Snowflake] Using JWT auth with raw key env var (length=${rawKey.length}, parsed PEM length=${pk.length})`);
-    } else {
-      const resolved = path.isAbsolute(keyPath!) ? keyPath! : path.resolve(process.cwd(), keyPath!);
-      pk = fs.readFileSync(resolved, 'utf8');
-      console.log(`[Snowflake] Using JWT auth with key file ${resolved}`);
-    }
-    try {
-      const keyObj = crypto.createPrivateKey({ key: pk, format: 'pem' });
-      const pubDer = crypto.createPublicKey(keyObj).export({ type: 'spki', format: 'der' });
-      const fp = crypto.createHash('sha256').update(pubDer).digest('hex');
-      console.log(`[Snowflake] Parsed private key OK. Type=${keyObj.asymmetricKeyType}. Public fingerprint (sha256 of SPKI DER, first 16): ${fp.substring(0, 16)}`);
-    } catch (e) {
-      console.error('[Snowflake] Failed to parse private key:', (e as Error).message);
-    }
+  if (keyPath) {
+    const resolved = path.isAbsolute(keyPath) ? keyPath : path.resolve(process.cwd(), keyPath);
     (opts as snowflake.ConnectionOptions & { authenticator?: string; privateKey?: string }).authenticator = 'SNOWFLAKE_JWT';
-    (opts as snowflake.ConnectionOptions & { authenticator?: string; privateKey?: string }).privateKey = pk;
+    (opts as snowflake.ConnectionOptions & { authenticator?: string; privateKey?: string }).privateKey = fs.readFileSync(resolved, 'utf8');
   } else {
-    const password = process.env.SNOWFLAKE_PASSWORD;
-    if (!password) throw new Error('Missing SNOWFLAKE_PASSWORD or SNOWFLAKE_PRIVATE_KEY_PATH');
+    if (!password) throw new Error('Missing SNOWFLAKE_PASSWORD');
     (opts as snowflake.ConnectionOptions & { password?: string }).password = password;
     if (process.env.SNOWFLAKE_PASSCODE) {
       (opts as snowflake.ConnectionOptions & { passcode?: string }).passcode = process.env.SNOWFLAKE_PASSCODE;

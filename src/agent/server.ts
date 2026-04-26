@@ -97,7 +97,8 @@ async function start() {
   seedMissingTables().catch((err) => console.warn('[Seed] Non-fatal error:', err.message));
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`\nAnalytical Agent API running at http://localhost:${PORT}`);
+    console.log(`\n[CAA] Build marker: lala-tenant-v1`);
+    console.log(`Analytical Agent API running at http://localhost:${PORT}`);
     console.log('Endpoints:');
     console.log(`  POST /api/chat    — { message: "...", sessionId?: "..." }`);
     console.log(`  POST /api/reset   — { sessionId?: "..." }`);
