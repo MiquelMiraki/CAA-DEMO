@@ -1,6 +1,7 @@
 import snowflake from 'snowflake-sdk';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 
 snowflake.configure({ logLevel: 'OFF' });
 
@@ -44,9 +45,19 @@ function createConnection(): snowflake.Connection {
     let pk: string;
     if (rawKey) {
       pk = normalizePrivateKey(rawKey);
+      console.log(`[Snowflake] Using JWT auth with raw key env var (length=${rawKey.length}, parsed PEM length=${pk.length})`);
     } else {
       const resolved = path.isAbsolute(keyPath!) ? keyPath! : path.resolve(process.cwd(), keyPath!);
       pk = fs.readFileSync(resolved, 'utf8');
+      console.log(`[Snowflake] Using JWT auth with key file ${resolved}`);
+    }
+    try {
+      const keyObj = crypto.createPrivateKey({ key: pk, format: 'pem' });
+      const pubDer = crypto.createPublicKey(keyObj).export({ type: 'spki', format: 'der' });
+      const fp = crypto.createHash('sha256').update(pubDer).digest('hex');
+      console.log(`[Snowflake] Parsed private key OK. Type=${keyObj.asymmetricKeyType}. Public fingerprint (sha256 of SPKI DER, first 16): ${fp.substring(0, 16)}`);
+    } catch (e) {
+      console.error('[Snowflake] Failed to parse private key:', (e as Error).message);
     }
     (opts as snowflake.ConnectionOptions & { authenticator?: string; privateKey?: string }).authenticator = 'SNOWFLAKE_JWT';
     (opts as snowflake.ConnectionOptions & { authenticator?: string; privateKey?: string }).privateKey = pk;
