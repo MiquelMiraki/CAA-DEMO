@@ -6,6 +6,18 @@ snowflake.configure({ logLevel: 'OFF' });
 
 let connection: snowflake.Connection | null = null;
 
+/**
+ * Normalize a private key from an env var into a PEM string the snowflake-sdk can use.
+ * Accepts: real PEM, PEM with literal \n escapes, PEM with CRLF, base64-encoded PEM.
+ */
+function normalizePrivateKey(raw: string): string {
+  let s = raw.trim().replace(/^["']|["']$/g, '');
+  if (!s.includes('-----BEGIN')) {
+    s = Buffer.from(s, 'base64').toString('utf8');
+  }
+  return s.replace(/\\n/g, '\n').replace(/\r/g, '').trim();
+}
+
 function createConnection(): snowflake.Connection {
   const account = process.env.SNOWFLAKE_ACCOUNT;
   const username = process.env.SNOWFLAKE_USERNAME;
@@ -21,15 +33,20 @@ function createConnection(): snowflake.Connection {
   const role = process.env.SNOWFLAKE_ROLE || 'ACCOUNTADMIN';
   const opts: snowflake.ConnectionOptions = { account, username, database, warehouse, schema, role };
 
-  // Auth: password by default (production). Use key-pair only if a local file is provided
-  // via SNOWFLAKE_PRIVATE_KEY_PATH (useful when MFA blocks password locally).
+  // Auth resolution:
+  //   1. SNOWFLAKE_PRIVATE_KEY env var (raw or base64) → JWT (Railway prod)
+  //   2. SNOWFLAKE_PRIVATE_KEY_PATH env var (file path) → JWT (local dev with .keys/rsa_key.p8)
+  //   3. SNOWFLAKE_PASSWORD → password (+ optional TOTP via SNOWFLAKE_PASSCODE)
+  const rawKey = process.env.SNOWFLAKE_PRIVATE_KEY;
   const keyPath = process.env.SNOWFLAKE_PRIVATE_KEY_PATH;
-  if (keyPath) {
-    const resolved = path.isAbsolute(keyPath) ? keyPath : path.resolve(process.cwd(), keyPath);
+  if (rawKey || keyPath) {
+    const pk = rawKey
+      ? normalizePrivateKey(rawKey)
+      : fs.readFileSync(path.isAbsolute(keyPath!) ? keyPath! : path.resolve(process.cwd(), keyPath!), 'utf8');
     (opts as snowflake.ConnectionOptions & { authenticator?: string; privateKey?: string }).authenticator = 'SNOWFLAKE_JWT';
-    (opts as snowflake.ConnectionOptions & { authenticator?: string; privateKey?: string }).privateKey = fs.readFileSync(resolved, 'utf8');
+    (opts as snowflake.ConnectionOptions & { authenticator?: string; privateKey?: string }).privateKey = pk;
   } else {
-    if (!password) throw new Error('Missing SNOWFLAKE_PASSWORD');
+    if (!password) throw new Error('Missing SNOWFLAKE_PASSWORD or key-pair env vars');
     (opts as snowflake.ConnectionOptions & { password?: string }).password = password;
     if (process.env.SNOWFLAKE_PASSCODE) {
       (opts as snowflake.ConnectionOptions & { passcode?: string }).passcode = process.env.SNOWFLAKE_PASSCODE;
@@ -50,18 +67,6 @@ async function connectNew(): Promise<snowflake.Connection> {
 
 export async function connectSnowflake(): Promise<void> {
   connection = await connectNew();
-  try {
-    const r = await executeQuery(
-      "SELECT CURRENT_USER() AS U, CURRENT_ROLE() AS R, CURRENT_WAREHOUSE() AS W, CURRENT_DATABASE() AS D"
-    );
-    console.log('[Snowflake] Session:', r.rows[0]);
-    const s = await executeQuery(
-      "SELECT SCHEMA_NAME FROM CAA_DB.INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME LIKE 'GOLD%' ORDER BY SCHEMA_NAME"
-    );
-    console.log('[Snowflake] Visible GOLD schemas:', s.rows.map((x) => x.SCHEMA_NAME));
-  } catch (e) {
-    console.warn('[Snowflake] Diag query failed:', (e as Error).message);
-  }
 }
 
 async function getActiveConnection(): Promise<snowflake.Connection> {
