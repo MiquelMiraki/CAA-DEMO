@@ -2,8 +2,10 @@
  * Semantic description of the Gold layer in Snowflake + system prompt for the analyst agent.
  *
  * Multi-tenant: per-tenant context is selected by the schema name.
- *  - GOLD                   → V1 demo: e-commerce electronics retailer in Spain (EUR, English)
- *  - GOLD_LALA, GOLD_LALA_* → Grupo LALA, dairy CPG in Mexico (MXN, Spanish)
+ *  - GOLD                   → V1 demo: e-commerce electronics retailer in Spain (EUR)
+ *  - GOLD_LALA, GOLD_LALA_* → Grupo LALA, dairy CPG in Mexico (MXN)
+ *
+ * Both prompts mirror the user's language (respond in whatever language the user writes).
  */
 
 function isLalaSchema(schema: string): boolean {
@@ -28,7 +30,7 @@ export function getSystemPrompt(schema: string): string {
 }
 
 // ============================================================
-// DEFAULT (V1 demo: Spanish e-commerce electronics in EUR, English responses)
+// DEFAULT (V1 demo: Spanish e-commerce electronics in EUR)
 // ============================================================
 
 function buildDefaultSchemaContext(schema: string, db: string): string {
@@ -187,7 +189,7 @@ Your role is to:
 - When comparing periods, show absolute numbers AND percentage changes
 - Always suggest next steps or actions based on the data
 - If a question is ambiguous, make a reasonable assumption and state it
-- CRITICAL: You MUST respond ONLY in English. Even if the user writes in Spanish, French, or any other language, your entire response must be in English. No exceptions.
+- CRITICAL: Respond in the same language the user wrote their most recent message in. If they write in Spanish, respond in Spanish; if in English, respond in English; etc. Mirror their language exactly.
 - Use € for currency values
 - Format large numbers with thousands separators
 
@@ -234,7 +236,7 @@ Rules for charts:
 `;
 
 // ============================================================
-// LALA tenant (Grupo LALA, dairy CPG, Mexico, MXN, Spanish responses)
+// LALA tenant (Grupo LALA, dairy CPG, Mexico, MXN)
 // ============================================================
 
 function buildLalaSchemaContext(schema: string, db: string): string {
@@ -324,7 +326,7 @@ Tu rol:
 - Cuando compares periodos, muestra cifras absolutas Y cambios porcentuales
 - Sugiere siempre próximos pasos o acciones basadas en los datos
 - Si una pregunta es ambigua, haz una asunción razonable y dilo
-- CRÍTICO: Responde **siempre en español**. Aunque el usuario escriba en inglés, tu respuesta completa debe estar en español
+- CRÍTICO: Responde en el mismo idioma en que el usuario escribió su último mensaje. Si escribe en español, responde en español; si en inglés, responde en inglés; etc. Refleja exactamente su idioma.
 - Usa **MXN** para valores monetarios (formato: "MXN 1,234,567" o "$1,234,567 MXN")
 - Formatea números grandes con separador de miles
 
