@@ -182,7 +182,7 @@ router.get('/placements', async (req, res) => {
 router.get('/creatives', async (req, res) => {
   const schema = getSchema(req);
   try {
-    let sql = `SELECT * FROM ${schema}.CREATIVE_PERFORMANCE WHERE 1=1${monthCondition(req, 'MONTH')} ORDER BY ROAS DESC`;
+    let sql = `SELECT * FROM ${schema}.CREATIVE_PERFORMANCE ORDER BY ROAS DESC`;
     const result = await executeQuery(sql);
     res.json(result.rows);
   } catch (err) {
@@ -194,7 +194,7 @@ router.get('/creatives', async (req, res) => {
 router.get('/keywords', async (req, res) => {
   const schema = getSchema(req);
   try {
-    let sql = `SELECT * FROM ${schema}.KEYWORD_PERFORMANCE WHERE 1=1${monthCondition(req, 'MONTH')} ORDER BY SPEND DESC`;
+    let sql = `SELECT * FROM ${schema}.KEYWORD_PERFORMANCE ORDER BY SPEND DESC`;
     const result = await executeQuery(sql);
     res.json(result.rows);
   } catch (err) {
