@@ -1,6 +1,8 @@
 import { api } from '../api/client';
 import { useData } from '../hooks/useData';
 import { useDateRange } from '../contexts/DateRangeContext';
+import { useClient } from '../contexts/ClientContext';
+import { fmtMoney, moneyAxis } from '../utils/formatMoney';
 import KPICard from '../components/KPICard';
 import ChartCard from '../components/ChartCard';
 import ChartTooltip from '../components/ChartTooltip';
@@ -18,27 +20,27 @@ const fmt = (n: number) =>
   n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` :
   n.toFixed(0);
 
-const fmtMoney = (n: number) =>
-  n >= 1_000_000 ? `€${(n / 1_000_000).toFixed(1)}M` :
-  n >= 1_000 ? `€${(n / 1_000).toFixed(1)}K` :
-  `€${n.toFixed(0)}`;
-
 /* ── Platform mapping ─────────────────────────────────────────── */
 const PLATFORM_MAP: Record<string, { channel: string; title: string; color: string }> = {
-  google: { channel: 'Google Ads', title: 'Google Ads', color: '#4285F4' },
-  meta:   { channel: 'Meta Ads',   title: 'Meta Ads',   color: '#0668E1' },
-  bing:   { channel: 'Bing Ads',   title: 'Bing Ads',   color: '#00897B' },
+  google:      { channel: 'Google Ads',           title: 'Google Ads',      color: '#4285F4' },
+  meta:        { channel: 'Meta Ads',             title: 'Meta Ads',        color: '#0668E1' },
+  bing:        { channel: 'Bing Ads',             title: 'Bing Ads',        color: '#00897B' },
+  tiktok:      { channel: 'TikTok Ads',           title: 'TikTok Ads',      color: '#FE2C55' },
+  influencers: { channel: 'Influencer Marketing', title: 'Influencer Marketing', color: '#8B5CF6' },
 };
 
 /* ── Props ────────────────────────────────────────────────────── */
 interface Props {
-  platform: 'google' | 'meta' | 'bing';
+  platform: 'google' | 'meta' | 'bing' | 'tiktok' | 'influencers';
 }
 
 /* ── Component ────────────────────────────────────────────────── */
 export default function PlatformPage({ platform }: Props) {
   const { channel, title, color } = PLATFORM_MAP[platform];
   const { range } = useDateRange();
+  const { client } = useClient();
+  const money = (n: number) => fmtMoney(n, client.currency);
+  const axisFmt = moneyAxis(client.currency);
 
   const { data: campaigns, loading: campsLoading } = useData(() => api.getCampaigns(channel, undefined, range), [channel, range]);
   const { data: daily, loading: dailyLoading } = useData(() => api.getCampaignDaily(channel, range), [channel, range]);
@@ -93,7 +95,7 @@ export default function PlatformPage({ platform }: Props) {
       {/* ── KPI Row ──────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[
-          { title: 'Spend',       value: fmtMoney(totalSpend),       delay: 0 },
+          { title: 'Spend',       value: money(totalSpend),          delay: 0 },
           { title: 'Impressions', value: fmt(totalImpressions),      delay: 1 },
           { title: 'Clicks',      value: fmt(totalClicks),           delay: 2 },
           { title: 'Conversions', value: fmt(totalConversions),      delay: 3 },
@@ -126,7 +128,7 @@ export default function PlatformPage({ platform }: Props) {
               tick={{ fill: '#4A4A4A', fontSize: 11 }}
               axisLine={false}
               tickLine={false}
-              tickFormatter={(v: number) => fmtMoney(v)}
+              tickFormatter={axisFmt}
             />
             <YAxis
               yAxisId="right"
@@ -227,7 +229,7 @@ export default function PlatformPage({ platform }: Props) {
                     {c.CAMPAIGN_TYPE}
                   </td>
                   <td className="py-2.5 px-2 text-right text-[var(--color-text-secondary)]">
-                    {fmtMoney(c.SPEND || 0)}
+                    {money(c.SPEND || 0)}
                   </td>
                   <td className="py-2.5 px-2 text-right text-[var(--color-text-secondary)]">
                     {fmt(c.IMPRESSIONS || 0)}
@@ -239,7 +241,7 @@ export default function PlatformPage({ platform }: Props) {
                     {fmt(c.CONVERSIONS || 0)}
                   </td>
                   <td className="py-2.5 px-2 text-right text-[var(--color-text-secondary)]">
-                    {c.CPA ? fmtMoney(c.CPA) : '-'}
+                    {c.CPA ? money(c.CPA) : '-'}
                   </td>
                   <td className="py-2.5 px-2 text-right">
                     <span
@@ -265,7 +267,7 @@ export default function PlatformPage({ platform }: Props) {
               tick={{ fill: '#4A4A4A', fontSize: 11 }}
               axisLine={{ stroke: '#1A1A1A' }}
               tickLine={false}
-              tickFormatter={(v: number) => fmtMoney(v)}
+              tickFormatter={axisFmt}
             />
             <YAxis
               type="category"

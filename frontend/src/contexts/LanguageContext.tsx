@@ -22,6 +22,8 @@ const translations: Record<string, Record<Lang, string>> = {
   'nav.google_ads': { en: 'Google Ads', es: 'Google Ads' },
   'nav.meta_ads': { en: 'Meta Ads', es: 'Meta Ads' },
   'nav.bing_ads': { en: 'Bing Ads', es: 'Bing Ads' },
+  'nav.tiktok_ads': { en: 'TikTok Ads', es: 'TikTok Ads' },
+  'nav.influencers': { en: 'Influencers', es: 'Influencers' },
   'nav.creatives': { en: 'Creatives', es: 'Creatividades' },
   'nav.keywords': { en: 'Keywords', es: 'Keywords' },
   'nav.attribution': { en: 'Attribution', es: 'Atribución' },

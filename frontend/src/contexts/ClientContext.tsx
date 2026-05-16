@@ -1,9 +1,44 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { setApiClient } from '../api/client';
 
+export type Currency = 'EUR' | 'MXN' | 'USD';
+
+export interface BrandTheme {
+  primary: string;
+  secondary: string;
+  logo: string;
+  tagline: string;
+  channelColors: Record<string, string>;
+}
+
 export interface Client {
-  id: string;   // schema name, e.g. "GOLD", "GOLD_ACME"
-  name: string; // display name, e.g. "Default", "ACME"
+  id: string;
+  name: string;
+  currency: Currency;
+  brand?: BrandTheme;
+}
+
+const BRAND_OVERRIDES: Record<string, Partial<Client>> = {
+  GOLD_LALA: {
+    currency: 'MXN',
+    brand: {
+      primary: '#27418F',
+      secondary: '#ED1C24',
+      logo: '/lala-logo.svg',
+      tagline: 'LALA × BCG · Performance Hub',
+      channelColors: {
+        'Google Ads': '#4285F4',
+        'Meta Ads': '#0668E1',
+        'TikTok Ads': '#FE2C55',
+        'Influencer Marketing': '#8B5CF6',
+      },
+    },
+  },
+};
+
+function applyOverrides(c: Client): Client {
+  const override = BRAND_OVERRIDES[c.id];
+  return override ? { ...c, ...override } : c;
 }
 
 interface ClientContextValue {
@@ -18,7 +53,7 @@ const ClientContext = createContext<ClientContextValue | null>(null);
 const STORAGE_KEY = 'caa_selected_client';
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
-const DEFAULT_CLIENT: Client = { id: 'GOLD', name: 'Default' };
+const DEFAULT_CLIENT: Client = { id: 'GOLD', name: 'Default', currency: 'EUR' };
 
 export function ClientProvider({ children }: { children: ReactNode }) {
   const [clients, setClients] = useState<Client[]>([DEFAULT_CLIENT]);
@@ -26,9 +61,8 @@ export function ClientProvider({ children }: { children: ReactNode }) {
     let initial: Client = DEFAULT_CLIENT;
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) initial = JSON.parse(stored);
+      if (stored) initial = applyOverrides(JSON.parse(stored));
     } catch { /* ignore */ }
-    // Sync the global API client schema before any child component mounts and fetches.
     setApiClient(initial.id);
     return initial;
   });
@@ -39,13 +73,17 @@ export function ClientProvider({ children }: { children: ReactNode }) {
       .then(r => r.json())
       .then((list: Client[]) => {
         if (list.length > 0) {
-          setClients(list);
-          // If stored client no longer exists, reset to first
+          const merged = list.map(c => applyOverrides({ ...DEFAULT_CLIENT, ...c }));
+          setClients(merged);
           const stored = client.id;
-          if (!list.find(c => c.id === stored)) {
-            setApiClient(list[0].id);
-            setClientState(list[0]);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(list[0]));
+          if (!merged.find(c => c.id === stored)) {
+            setApiClient(merged[0].id);
+            setClientState(merged[0]);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(merged[0]));
+          } else {
+            // Reapply overrides in case BRAND_OVERRIDES changed since persistence
+            const current = merged.find(c => c.id === stored)!;
+            setClientState(current);
           }
         }
       })
@@ -54,12 +92,10 @@ export function ClientProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setClient = (c: Client) => {
-    // Update the global API client schema synchronously, before React re-renders
-    // and child components remount + refetch. Otherwise the first fetch after a
-    // client switch reads the previous schema.
-    setApiClient(c.id);
-    setClientState(c);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(c));
+    const withOverrides = applyOverrides(c);
+    setApiClient(withOverrides.id);
+    setClientState(withOverrides);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(withOverrides));
   };
 
   return (

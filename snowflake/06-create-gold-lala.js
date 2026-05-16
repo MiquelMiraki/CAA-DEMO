@@ -4,7 +4,7 @@
  * Multi-tenant CAA tenant: GOLD_LALA
  * Currency: MXN
  * Time period: Jan 1, 2026 - Mar 31, 2026 (90 days)
- * Channels: Google Ads, Meta Ads, Walmart Connect (Mexico retail media)
+ * Channels: Google Ads, Meta Ads, TikTok Ads, Influencer Marketing
  * Geography: 5 Mexico regions + 5 US Hispanic DMAs
  *
  * Run: node snowflake/06-create-gold-lala.js
@@ -80,12 +80,20 @@ const CAMPAIGNS = [
   { id: 2010, channel: 'Meta Ads', type: 'TRAFFIC', name: 'Volcanes Tradición - Crema y Mantequilla', brand: 'VOLCANES', geo: 'MX', dailyBudget: 6500, region: 'OCCIDENTE' },
   { id: 2011, channel: 'Meta Ads', type: 'CONVERSIONS', name: 'LALA How You Wanna - US Hispanic Meta', brand: 'LALA', geo: 'US_HISPANIC', dailyBudget: 12000, region: 'US_LA' },
 
-  // ========== WALMART CONNECT (5) - Mexico retail media ==========
-  { id: 3001, channel: 'Walmart Connect', type: 'SEARCH', name: 'Walmart Connect - Lala Leche Fresca SKUs', brand: 'LALA', geo: 'MX', dailyBudget: 16000, region: 'CENTRO' },
-  { id: 3002, channel: 'Walmart Connect', type: 'SEARCH', name: 'Walmart Connect - Yomi Niños Yogurt', brand: 'YOMI', geo: 'MX', dailyBudget: 9000, region: 'NACIONAL' },
-  { id: 3003, channel: 'Walmart Connect', type: 'SEARCH', name: 'Walmart Connect - Nutri Familia Q1', brand: 'NUTRI', geo: 'MX', dailyBudget: 11000, region: 'BAJIO' },
-  { id: 3004, channel: 'Walmart Connect', type: 'DISPLAY', name: 'Walmart Connect - LALA 100 Deslactosada', brand: 'LALA100', geo: 'MX', dailyBudget: 13000, region: 'NORTE' },
-  { id: 3005, channel: 'Walmart Connect', type: 'SEARCH', name: 'Walmart Connect - Boreal Fórmulas Onsite', brand: 'BOREAL', geo: 'MX', dailyBudget: 10000, region: 'CENTRO' },
+  // ========== TIKTOK ADS (6) ==========
+  { id: 3001, channel: 'TikTok Ads', type: 'REELS_SPARK', name: 'Yomi Niños - #YomiDance Challenge', brand: 'YOMI', geo: 'MX', dailyBudget: 14000, region: 'NACIONAL' },
+  { id: 3002, channel: 'TikTok Ads', type: 'IN_FEED', name: 'LALA 100 - Vive Sin Límites TikTok', brand: 'LALA100', geo: 'MX', dailyBudget: 16000, region: 'NACIONAL' },
+  { id: 3003, channel: 'TikTok Ads', type: 'SPARK_AD', name: 'Siluett Light - Mujeres 25-40 Fitness', brand: 'SILUETT', geo: 'MX', dailyBudget: 9000, region: 'CENTRO' },
+  { id: 3004, channel: 'TikTok Ads', type: 'BRAND_TAKEOVER', name: 'La Neta Lala - Chayanne TikTok Edit', brand: 'LALA', geo: 'MX', dailyBudget: 32000, region: 'NACIONAL' },
+  { id: 3005, channel: 'TikTok Ads', type: 'HASHTAG_CHALLENGE', name: 'Yomi Sabores - #YomiSaboreaLaVida', brand: 'YOMI', geo: 'MX', dailyBudget: 11000, region: 'NACIONAL' },
+  { id: 3006, channel: 'TikTok Ads', type: 'IN_FEED', name: 'LALA How You Wanna - US Hispanic TikTok', brand: 'LALA', geo: 'US_HISPANIC', dailyBudget: 10000, region: 'US_LA' },
+
+  // ========== INFLUENCER MARKETING (5) ==========
+  { id: 4001, channel: 'Influencer Marketing', type: 'MACRO', name: 'Boreal - Mamás Primerizas (5 macro-influencers)', brand: 'BOREAL', geo: 'MX', dailyBudget: 18000, region: 'NACIONAL' },
+  { id: 4002, channel: 'Influencer Marketing', type: 'MICRO', name: 'Yomi - Micro-Mamás Niños (20 micro)', brand: 'YOMI', geo: 'MX', dailyBudget: 12000, region: 'NACIONAL' },
+  { id: 4003, channel: 'Influencer Marketing', type: 'MACRO', name: 'Siluett Fitness - 3 Fitness Influencers', brand: 'SILUETT', geo: 'MX', dailyBudget: 9500, region: 'CENTRO' },
+  { id: 4004, channel: 'Influencer Marketing', type: 'CELEBRITY', name: 'Chayanne - La Neta Lala Embajador', brand: 'LALA', geo: 'MX', dailyBudget: 38000, region: 'NACIONAL' },
+  { id: 4005, channel: 'Influencer Marketing', type: 'FOODIE', name: 'LALA Recetas - 8 Food Creators', brand: 'LALA', geo: 'MX', dailyBudget: 7500, region: 'NACIONAL' },
 ];
 
 // ============================================================
@@ -181,11 +189,45 @@ function generateMetrics(campaign, date) {
       convRate = rnd(1.0, 2.5);
       aov = rnd(320, 540);
     }
-  } else { // Walmart Connect (retail media: full grocery basket)
-    cpm = rnd(220, 420);
-    ctr = rnd(0.5, 1.6);
-    convRate = rnd(9.0, 16.0); // High because user is already shopping
-    aov = rnd(820, 1650);
+  } else if (campaign.channel === 'TikTok Ads') {
+    if (campaign.type === 'BRAND_TAKEOVER' || campaign.type === 'HASHTAG_CHALLENGE') {
+      cpm = rnd(30, 70);
+      ctr = rnd(1.4, 3.2);
+      convRate = rnd(0.6, 1.6);
+      aov = rnd(280, 480);
+    } else if (campaign.type === 'SPARK_AD' || campaign.type === 'REELS_SPARK') {
+      cpm = rnd(40, 95);
+      ctr = rnd(1.8, 4.0);
+      convRate = rnd(1.2, 2.8);
+      aov = rnd(320, 520);
+    } else { // IN_FEED
+      cpm = rnd(50, 110);
+      ctr = rnd(1.2, 2.6);
+      convRate = rnd(1.5, 3.2);
+      aov = rnd(340, 560);
+    }
+  } else { // Influencer Marketing (organic-style reach, promo-code conversions)
+    if (campaign.type === 'CELEBRITY') {
+      cpm = rnd(120, 220);
+      ctr = rnd(0.3, 0.8);
+      convRate = rnd(2.5, 4.5);
+      aov = rnd(420, 680);
+    } else if (campaign.type === 'MACRO') {
+      cpm = rnd(80, 160);
+      ctr = rnd(0.5, 1.2);
+      convRate = rnd(1.8, 3.6);
+      aov = rnd(380, 580);
+    } else if (campaign.type === 'MICRO') {
+      cpm = rnd(40, 95);
+      ctr = rnd(1.0, 2.4);
+      convRate = rnd(3.0, 5.5); // High trust → high conversion via promo code
+      aov = rnd(340, 540);
+    } else { // FOODIE
+      cpm = rnd(55, 120);
+      ctr = rnd(0.8, 1.8);
+      convRate = rnd(2.0, 4.0);
+      aov = rnd(360, 580);
+    }
   }
 
   const impressions = Math.round((spend / cpm) * 1000);
@@ -446,7 +488,7 @@ async function run() {
   const deviceRows = [];
   // CPG mobile-heavy: 65% mobile, 25% desktop, 10% tablet
   const deviceShares = { MOBILE: 0.68, DESKTOP: 0.22, TABLET: 0.10 };
-  const channels = ['Google Ads', 'Meta Ads', 'Walmart Connect'];
+  const channels = ['Google Ads', 'Meta Ads', 'TikTok Ads', 'Influencer Marketing'];
   const months = ['2026-01-01', '2026-02-01', '2026-03-01'];
   for (const month of months) {
     for (const channel of channels) {
@@ -538,6 +580,12 @@ async function run() {
     { camp: 'Boreal Comunidad Mamás FB Group', adset: 'Mamás Primerizas 22-32', ad: 'Boreal_Carousel_Etapas', name: 'Boreal Etapas 1-3 Carousel', format: 'CAROUSEL', cta: 'CONOCER MÁS', headline: 'Crecimiento saludable en cada etapa' },
     { camp: 'Volcanes Tradición - Crema y Mantequilla', adset: 'Adultos 35-65 Tradicional', ad: 'Volcanes_Image_Mesa', name: 'Volcanes Mesa Tradicional', format: 'IMAGE', cta: 'COMPRAR', headline: 'El sabor tradicional que recuerdas' },
     { camp: 'Lala E-commerce Catalog Walmart', adset: 'Compradores Walmart App', ad: 'Catalog_Dynamic_v3', name: 'Walmart Dynamic Catalog', format: 'CAROUSEL', cta: 'COMPRAR', headline: 'Tus productos Lala en Walmart' },
+    { camp: 'La Neta Lala - Chayanne TikTok Edit', adset: 'Gen Z & Millennials Nacional', ad: 'Chayanne_TT_Spark_v1', name: 'Chayanne TikTok Edit', format: 'VIDEO', cta: 'VER MÁS', headline: 'La neta detrás de un vaso de Lala' },
+    { camp: 'Yomi Niños - #YomiDance Challenge', adset: 'Niños 6-12 + Mamás', ad: 'Yomi_Dance_HashtagChallenge', name: 'Yomi Dance Challenge', format: 'VIDEO', cta: 'PARTICIPAR', headline: '¡Baila con Yomi y gana!' },
+    { camp: 'LALA 100 - Vive Sin Límites TikTok', adset: 'Atletas amateurs 22-40', ad: 'LALA100_TT_Athletes', name: 'LALA 100 Atletas TikTok', format: 'VIDEO', cta: 'COMPRAR', headline: '100% proteína para superarte' },
+    { camp: 'Boreal - Mamás Primerizas (5 macro-influencers)', adset: 'Macro Mamás 25-35', ad: 'Boreal_Influencer_Rutina', name: 'Boreal Rutina Mamá Influencer', format: 'VIDEO', cta: 'CONOCER MÁS', headline: 'La fórmula que las mamás eligen' },
+    { camp: 'Chayanne - La Neta Lala Embajador', adset: 'Adultos 30-60 Premium', ad: 'Chayanne_Celebrity_LongForm', name: 'Chayanne Celebrity Embajador', format: 'VIDEO', cta: 'VER HISTORIA', headline: 'La neta que cambia generaciones' },
+    { camp: 'LALA Recetas - 8 Food Creators', adset: 'Foodies & Home Cooks 28-50', ad: 'Foodie_Recetas_Carousel', name: 'LALA Recetas Foodies', format: 'CAROUSEL', cta: 'GUARDAR RECETA', headline: '8 recetas que tu familia va a amar' },
   ];
   const creativeRows = [];
   for (const c of creatives) {
@@ -582,23 +630,17 @@ async function run() {
     { ch: 'Google Ads', camp: 'LALA 100 Deslactosada Search', adg: 'Deslactosada', kw: 'leche alta proteina', mt: 'BROAD' },
     { ch: 'Google Ads', camp: 'Lala Shopping - Walmart', adg: 'Shopping Lacteos', kw: 'queso oaxaca lala', mt: 'PHRASE' },
     { ch: 'Google Ads', camp: 'Lala Shopping - Walmart', adg: 'Shopping Lacteos', kw: 'crema lala', mt: 'EXACT' },
-    { ch: 'Walmart Connect', camp: 'Walmart Connect - Lala Leche Fresca SKUs', adg: 'Onsite Search', kw: 'leche fresca', mt: 'PHRASE' },
-    { ch: 'Walmart Connect', camp: 'Walmart Connect - Lala Leche Fresca SKUs', adg: 'Onsite Search', kw: 'leche entera', mt: 'PHRASE' },
-    { ch: 'Walmart Connect', camp: 'Walmart Connect - Yomi Niños Yogurt', adg: 'Onsite Yogurt', kw: 'yogurt para niños', mt: 'PHRASE' },
-    { ch: 'Walmart Connect', camp: 'Walmart Connect - Yomi Niños Yogurt', adg: 'Onsite Yogurt', kw: 'yomi sabores', mt: 'EXACT' },
-    { ch: 'Walmart Connect', camp: 'Walmart Connect - Boreal Fórmulas Onsite', adg: 'Onsite Formula', kw: 'formula bebe etapa 1', mt: 'PHRASE' },
   ];
   const keywordRows = [];
   for (const k of keywords) {
-    const isWalmart = k.ch === 'Walmart Connect';
-    const imp = rndInt(8000, isWalmart ? 80000 : 250000);
-    const ctr = isWalmart ? rnd(0.6, 1.8) : rnd(3.5, 8.5);
+    const imp = rndInt(8000, 250000);
+    const ctr = rnd(3.5, 8.5);
     const clk = Math.round(imp * ctr / 100);
-    const cpc = isWalmart ? rnd(8, 18) : rnd(4, 22);
+    const cpc = rnd(4, 22);
     const spd = Math.round(clk * cpc);
-    const cr = isWalmart ? rnd(7, 14) : rnd(2.5, 5.5);
+    const cr = rnd(2.5, 5.5);
     const cnv = Math.round(clk * cr / 100);
-    const aov = isWalmart ? rnd(280, 480) : rnd(200, 380);
+    const aov = rnd(200, 380);
     const crv = Math.round(cnv * aov);
     const cpa = cnv > 0 ? Math.round(spd / cnv * 100) / 100 : 0;
     const roas = spd > 0 ? Math.round(crv / spd * 100) / 100 : 0;
@@ -838,7 +880,7 @@ async function run() {
   console.log(`\n${SCHEMA} schema fully built!`);
   console.log(`\nSummary:`);
   console.log(`  - ${campaignDailyRows.length} campaign-daily records`);
-  console.log(`  - ${CAMPAIGNS.length} campaigns across 3 channels (Google Ads, Meta Ads, Walmart Connect)`);
+  console.log(`  - ${CAMPAIGNS.length} campaigns across 4 channels (Google Ads, Meta Ads, TikTok Ads, Influencer Marketing)`);
   console.log(`  - ${BRANDS.length} brand families`);
   console.log(`  - 90 days of data (2026-01-01 to 2026-03-31)`);
   console.log(`  - All amounts in MXN`);

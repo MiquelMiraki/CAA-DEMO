@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { FileDown, Sun, Moon } from 'lucide-react';
 import Sidebar from './components/Sidebar';
@@ -42,6 +42,8 @@ const PAGE_TITLES: Record<string, string> = {
   '/google-ads': 'Google Ads',
   '/meta-ads': 'Meta Ads',
   '/bing-ads': 'Bing Ads',
+  '/tiktok-ads': 'TikTok Ads',
+  '/influencers': 'Influencer Marketing',
   '/seo': 'SEO Performance',
   '/analytics': 'Web Analytics',
   '/crm': 'CRM Pipeline',
@@ -97,9 +99,33 @@ function TopBar() {
   );
 }
 
+const DEFAULT_GOLD = '#C8A84E';
+const DEFAULT_GOLD_DIM = 'rgba(200, 168, 78, 0.15)';
+
+function hexToRgba(hex: string, alpha: number): string {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 function AppContent() {
   const { client } = useClient();
   const [showOnboarding, setShowOnboarding] = useState(() => !isOnboardingComplete(client.id));
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (client.brand) {
+      root.style.setProperty('--color-gold', client.brand.primary);
+      root.style.setProperty('--color-gold-dim', hexToRgba(client.brand.primary, 0.15));
+      root.style.setProperty('--color-brand-secondary', client.brand.secondary);
+    } else {
+      root.style.setProperty('--color-gold', DEFAULT_GOLD);
+      root.style.setProperty('--color-gold-dim', DEFAULT_GOLD_DIM);
+      root.style.removeProperty('--color-brand-secondary');
+    }
+  }, [client.brand]);
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: 'var(--color-bg)' }}>
@@ -115,6 +141,8 @@ function AppContent() {
             <Route path="/google-ads" element={<PlatformPage platform="google" />} />
             <Route path="/meta-ads" element={<PlatformPage platform="meta" />} />
             <Route path="/bing-ads" element={<PlatformPage platform="bing" />} />
+            <Route path="/tiktok-ads" element={<PlatformPage platform="tiktok" />} />
+            <Route path="/influencers" element={<PlatformPage platform="influencers" />} />
             <Route path="/seo" element={<SEO />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/crm" element={<CRM />} />

@@ -262,7 +262,8 @@ The company is **Grupo LALA**, the largest dairy company in Mexico (~MXN 100B an
 ### Advertising channels in this schema
 - **Google Ads**: Search (branded + generic), Shopping (Walmart MX, Soriana), YouTube
 - **Meta Ads**: Conversions, Awareness, Traffic, Engagement, Catalog Sales (Walmart MX), Stories, Reels — across Facebook + Instagram
-- **Walmart Connect** (Mexico retail media): onsite Search and Display ads on the Walmart MX shopping experience. This is a key retail-media channel for CPG dairy in Mexico
+- **TikTok Ads**: In-Feed, Reels Spark, Spark Ads, Brand Takeover, Hashtag Challenge — Gen Z and Millennial reach for brands like Yomi, LALA 100 and Siluett
+- **Influencer Marketing**: Celebrity (Chayanne), Macro (Boreal mamás, Siluett fitness), Micro (Yomi micro-mamás), Foodie creators (LALA recetas) — conversions attributed via promo codes
 
 ### Geography
 - **Mexico**: regional skew follows LALA's real distribution — Norte (Coahuila/NL/Tamaulipas) is the strongest plaza, then Centro (CDMX/EdoMex), Bajío (Querétaro/Gto/Jalisco), Occidente (Sinaloa/Durango), Sureste (Veracruz/Yucatán)
@@ -271,9 +272,9 @@ The company is **Grupo LALA**, the largest dairy company in Mexico (~MXN 100B an
 ### Available Tables
 (All tables follow the same structure as the CAA standard model. Currency values are in **MXN (pesos mexicanos)**.)
 
-#### 1. ${schema}.CAMPAIGN_DAILY (~2,520 rows: 28 campaigns × 90 days)
+#### 1. ${schema}.CAMPAIGN_DAILY (~3,060 rows: 34 campaigns × 90 days)
 Daily performance for every campaign across all channels.
-Columns: DATE, CHANNEL ('Google Ads', 'Meta Ads', 'Walmart Connect'), CAMPAIGN_ID, CAMPAIGN_NAME (real LALA campaign names), CAMPAIGN_TYPE (SEARCH/SHOPPING/VIDEO/CONVERSIONS/AWARENESS/TRAFFIC/ENGAGEMENT/CATALOG_SALES/DISPLAY), GEO ('MX' or 'US_HISPANIC'), DAILY_BUDGET (MXN), IMPRESSIONS, CLICKS, SPEND (MXN), CONVERSIONS, CONVERSION_VALUE (MXN), CTR_PCT, AVG_CPC (MXN), CPA (MXN), ROAS
+Columns: DATE, CHANNEL ('Google Ads', 'Meta Ads', 'TikTok Ads', 'Influencer Marketing'), CAMPAIGN_ID, CAMPAIGN_NAME (real LALA campaign names), CAMPAIGN_TYPE (SEARCH/SHOPPING/VIDEO/CONVERSIONS/AWARENESS/TRAFFIC/ENGAGEMENT/CATALOG_SALES/IN_FEED/REELS_SPARK/SPARK_AD/BRAND_TAKEOVER/HASHTAG_CHALLENGE/MACRO/MICRO/CELEBRITY/FOODIE), GEO ('MX' or 'US_HISPANIC'), DAILY_BUDGET (MXN), IMPRESSIONS, CLICKS, SPEND (MXN), CONVERSIONS, CONVERSION_VALUE (MXN), CTR_PCT, AVG_CPC (MXN), CPA (MXN), ROAS
 
 #### 2. ${schema}.CHANNEL_DAILY (~270 rows)
 Daily totals aggregated by channel.
@@ -284,7 +285,7 @@ Daily totals aggregated by channel.
 #### 6. ${schema}.DEVICE_BREAKDOWN — MOBILE / DESKTOP / TABLET split per channel per month (mobile-heavy ~68% as expected for CPG).
 #### 7. ${schema}.PLACEMENT_BREAKDOWN — Meta only: instagram_reels, instagram_stories, instagram_feed, facebook_feed, facebook_stories, facebook_reels.
 #### 8. ${schema}.CREATIVE_PERFORMANCE — Meta creative/ad level (campaign, adset, ad, format, headline in Spanish).
-#### 9. ${schema}.KEYWORD_PERFORMANCE — Google Ads + Walmart Connect keywords (Spanish: "leche deslactosada", "yogurt natural", "boreal etapa 2", "yomi sabores", etc.). Note: this table covers Google + Walmart Connect (no Bing).
+#### 9. ${schema}.KEYWORD_PERFORMANCE — Google Ads keywords only (Spanish: "leche deslactosada", "yogurt natural", "boreal etapa 2", "lala 100", etc.). TikTok and Influencer Marketing do not use keyword targeting in the traditional sense.
 #### 10. ${schema}.BUDGET_PACING — utilization status per campaign per month.
 #### 11. ${schema}.FUNNEL — impression → click → conversion per channel per month.
 #### 12. ${schema}.CHANGE_AUDIT — change log across Google Ads + Meta Ads (users like ilse.parra@lala.com.mx, javier.pejito@lala.com.mx, agency.kenmedia@kenmedia.mx).
@@ -303,12 +304,12 @@ Daily totals aggregated by channel.
 - **Currency is MXN (pesos mexicanos)**. Display amounts as "MXN 1,234,567" or "$1,234,567 MXN"
 - Use ROUND() for clean output
 - Use DATE_TRUNC() for period grouping
-- CHANNEL values: 'Google Ads', 'Meta Ads', 'Walmart Connect'
+- CHANNEL values: 'Google Ads', 'Meta Ads', 'TikTok Ads', 'Influencer Marketing'
 - GEO values: 'MX', 'US_HISPANIC'
 - MONTH columns are DATE type (first day of month)
 - For "this month" / "el mes actual" use **March 2026** (the most recent complete month)
 - For "last month" / "el mes anterior" use **February 2026**
-- The KEYWORD_PERFORMANCE table has CHANNEL = 'Google Ads' OR 'Walmart Connect' (no Bing)
+- The KEYWORD_PERFORMANCE table has CHANNEL = 'Google Ads' only
 `;
 }
 
@@ -335,7 +336,7 @@ Cuando analices performance, considera:
 - **Métricas de eficiencia**: CTR, CPC, CPA, ROAS
 - **Métricas de volumen**: Impresiones, clicks, conversiones, revenue
 - **Tendencia**: ¿mejora o empeora? ¿qué tan rápido?
-- **Benchmarks CPG México**: ROAS típico Meta 3-7x, Walmart Connect 4-10x, Google Search 5-12x. CPA dairy típico MXN 80-300
+- **Benchmarks CPG México**: ROAS típico Meta 3-7x, TikTok 2-6x, Google Search 5-12x, Influencer Marketing 3-8x (micro mejor que macro en CVR). CPA dairy típico MXN 80-300
 - **Drivers**: ¿qué está causando el cambio? ¿shifts de budget? ¿eficiencia? ¿estacionalidad? ¿cambios de creatividad?
 - **Recomendaciones**: ¿qué hacer? ¿subir budget? ¿pausar campañas? ¿probar nuevos creatives? ¿reasignar entre canales?
 
@@ -369,7 +370,7 @@ Reglas para charts:
 - "pie" para distribuciones / share breakdowns (pie usa "key" y "value" en data, más "color")
 - Mantén data arrays manejables (máx ~30-50 puntos)
 - Siempre incluye chart Y análisis textual, nunca solo el chart
-- Colores: Google Ads #4285F4, Meta Ads #0668E1, Walmart Connect #0071CE, gold #C8A84E, green #22C55E, red #EF4444
+- Colores: Google Ads #4285F4, Meta Ads #0668E1, TikTok Ads #FE2C55, Influencer Marketing #8B5CF6, brand blue Lala #27418F, brand red Lala #ED1C24, green #22C55E, red #EF4444
 
 ## Reglas importantes
 - NUNCA inventes datos. Solo usa resultados de queries SQL reales

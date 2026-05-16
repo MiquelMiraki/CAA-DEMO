@@ -3,34 +3,49 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, BarChart3, Target, Share2, Search, Globe, Users,
   TrendingUp, Settings, MessageSquareText, DollarSign, Palette,
-  Key, ClipboardList, GitBranch, Bell, ChevronDown, Building2, LayoutGrid, ArrowLeftRight, Crosshair, Receipt
+  Key, ClipboardList, GitBranch, Bell, ChevronDown, Building2, LayoutGrid, ArrowLeftRight, Crosshair, Receipt,
+  Music, Megaphone
 } from 'lucide-react';
 import { useClient } from '../contexts/ClientContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
-const NAV_SECTIONS = [
-  {
-    labelKey: 'nav.overview',
-    items: [
-      { to: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
-      { to: '/budget-pacing', icon: DollarSign, labelKey: 'nav.budget_pacing' },
-      { to: '/change-audit', icon: ClipboardList, labelKey: 'nav.activity_log' },
-      { to: '/alerts', icon: Bell, labelKey: 'nav.alerts' },
-      { to: '/goals', icon: Crosshair, labelKey: 'nav.goals' },
-      { to: '/compare', icon: ArrowLeftRight, labelKey: 'nav.compare' },
-      { to: '/custom-dashboard', icon: LayoutGrid, labelKey: 'nav.my_dashboard' },
-    ],
-  },
+const DEFAULT_PAID_MEDIA = [
+  { to: '/google-ads', icon: Target, labelKey: 'nav.google_ads' },
+  { to: '/meta-ads', icon: Share2, labelKey: 'nav.meta_ads' },
+  { to: '/bing-ads', icon: Search, labelKey: 'nav.bing_ads' },
+  { to: '/creatives', icon: Palette, labelKey: 'nav.creatives' },
+  { to: '/keywords', icon: Key, labelKey: 'nav.keywords' },
+  { to: '/attribution', icon: GitBranch, labelKey: 'nav.attribution' },
+];
+
+const LALA_PAID_MEDIA = [
+  { to: '/google-ads', icon: Target, labelKey: 'nav.google_ads' },
+  { to: '/meta-ads', icon: Share2, labelKey: 'nav.meta_ads' },
+  { to: '/tiktok-ads', icon: Music, labelKey: 'nav.tiktok_ads' },
+  { to: '/influencers', icon: Megaphone, labelKey: 'nav.influencers' },
+  { to: '/creatives', icon: Palette, labelKey: 'nav.creatives' },
+  { to: '/keywords', icon: Key, labelKey: 'nav.keywords' },
+  { to: '/attribution', icon: GitBranch, labelKey: 'nav.attribution' },
+];
+
+const NAV_OVERVIEW = {
+  labelKey: 'nav.overview',
+  items: [
+    { to: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
+    { to: '/budget-pacing', icon: DollarSign, labelKey: 'nav.budget_pacing' },
+    { to: '/change-audit', icon: ClipboardList, labelKey: 'nav.activity_log' },
+    { to: '/alerts', icon: Bell, labelKey: 'nav.alerts' },
+    { to: '/goals', icon: Crosshair, labelKey: 'nav.goals' },
+    { to: '/compare', icon: ArrowLeftRight, labelKey: 'nav.compare' },
+    { to: '/custom-dashboard', icon: LayoutGrid, labelKey: 'nav.my_dashboard' },
+  ],
+};
+
+const NAV_SECTIONS_BASE = [
+  NAV_OVERVIEW,
   {
     labelKey: 'nav.paid_media',
-    items: [
-      { to: '/google-ads', icon: Target, labelKey: 'nav.google_ads' },
-      { to: '/meta-ads', icon: Share2, labelKey: 'nav.meta_ads' },
-      { to: '/bing-ads', icon: Search, labelKey: 'nav.bing_ads' },
-      { to: '/creatives', icon: Palette, labelKey: 'nav.creatives' },
-      { to: '/keywords', icon: Key, labelKey: 'nav.keywords' },
-      { to: '/attribution', icon: GitBranch, labelKey: 'nav.attribution' },
-    ],
+    items: DEFAULT_PAID_MEDIA,
   },
   {
     labelKey: 'nav.organic',
@@ -94,20 +109,32 @@ function ClientSelector() {
 
 export default function Sidebar() {
   const { t } = useLanguage();
+  const { client } = useClient();
+  const brand = client.brand;
+
+  const navSections = brand
+    ? NAV_SECTIONS_BASE.map(s => s.labelKey === 'nav.paid_media' ? { ...s, items: LALA_PAID_MEDIA } : s)
+    : NAV_SECTIONS_BASE;
 
   return (
     <aside className="fixed left-0 top-0 bottom-0 w-60 bg-[var(--color-bg)] border-r border-[var(--color-border)] flex flex-col z-50">
       <div className="p-5 pb-2 flex items-center gap-3">
-        <img src="/miraki-logo.png" alt="Miraki AI" className="h-8 w-auto brightness-110" />
+        {brand ? (
+          <img src={brand.logo} alt={client.name} className="h-10 w-auto" />
+        ) : (
+          <img src="/miraki-logo.png" alt="Miraki AI" className="h-8 w-auto brightness-110" />
+        )}
       </div>
       <div className="px-5 pb-3">
-        <span className="text-[10px] font-semibold tracking-[0.2em] text-[var(--color-gold)]">CAA ANALYTICS</span>
+        <span className="text-[10px] font-semibold tracking-[0.2em] text-[var(--color-gold)]">
+          {brand ? 'POWERED BY MIRAKI' : 'CAA ANALYTICS'}
+        </span>
       </div>
 
       <ClientSelector />
 
       <nav className="flex-1 px-3 overflow-y-auto space-y-5">
-        {NAV_SECTIONS.map((section) => (
+        {navSections.map((section) => (
           <div key={section.labelKey}>
             <p className="px-3 mb-1.5 text-[10px] font-medium tracking-[0.15em] text-[var(--color-text-muted)]">
               {t(section.labelKey)}

@@ -1,7 +1,9 @@
 import { api } from '../api/client';
 import { useData } from '../hooks/useData';
 import { useDateRange } from '../contexts/DateRangeContext';
+import { useClient } from '../contexts/ClientContext';
 import { exportCsv } from '../utils/exportCsv';
+import { fmtMoney, moneyAxis } from '../utils/formatMoney';
 import KPICard from '../components/KPICard';
 import ChartCard from '../components/ChartCard';
 import ChartTooltip from '../components/ChartTooltip';
@@ -11,21 +13,26 @@ import {
   Legend, ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts';
 
-const CHANNEL_COLORS: Record<string, string> = {
+const DEFAULT_CHANNEL_COLORS: Record<string, string> = {
   'Google Ads': '#4285F4',
   'Meta Ads': '#0668E1',
   'Bing Ads': '#00897B',
 };
 
 const fmt = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : n.toFixed(0);
-const fmtMoney = (n: number) => n >= 1000 ? `€${(n / 1000).toFixed(1)}K` : `€${n.toFixed(0)}`;
 
 export default function Dashboard() {
   const { range, label } = useDateRange();
+  const { client } = useClient();
   const { data: kpi, loading: kpiLoading } = useData(() => api.getKPI(range), [range]);
   const { data: channelDaily } = useData(() => api.getChannelDaily(range), [range]);
   const { data: monthly } = useData(() => api.getMonthlySummary(range), [range]);
   const { data: funnel } = useData(() => api.getFunnel(range), [range]);
+
+  const CHANNEL_COLORS = client.brand?.channelColors ?? DEFAULT_CHANNEL_COLORS;
+  const currency = client.currency;
+  const money = (n: number) => fmtMoney(n, currency);
+  const axisFmt = moneyAxis(currency);
 
   if (kpiLoading) return <LoadingSpinner />;
   const k = kpi?.[0];
@@ -69,16 +76,32 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-white text-xl font-semibold">Dashboard Overview</h2>
-        <p className="text-[var(--color-text-muted)] text-sm mt-1">Cross-platform performance · {label}</p>
-      </div>
+      {client.brand ? (
+        <div className="flex items-center gap-4 pb-2 border-b border-[var(--color-border)]">
+          <img src={client.brand.logo} alt={client.name} className="h-12 w-auto" />
+          <div className="flex-1">
+            <h2 className="text-white text-xl font-semibold">{client.brand.tagline}</h2>
+            <p className="text-[var(--color-text-muted)] text-sm mt-1">Rendimiento multicanal · {label}</p>
+          </div>
+          <div
+            className="hidden md:block px-3 py-1 rounded-md text-[10px] font-semibold tracking-[0.15em]"
+            style={{ color: client.brand.secondary, border: `1px solid ${client.brand.secondary}33` }}
+          >
+            MXN
+          </div>
+        </div>
+      ) : (
+        <div>
+          <h2 className="text-white text-xl font-semibold">Dashboard Overview</h2>
+          <p className="text-[var(--color-text-muted)] text-sm mt-1">Cross-platform performance · {label}</p>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-in">
-        <KPICard title="Total Spend" value={fmtMoney(k?.CURRENT_SPEND || 0)} change={k?.SPEND_CHANGE_PCT} subtitle="vs prev month" />
+        <KPICard title="Total Spend" value={money(k?.CURRENT_SPEND || 0)} change={k?.SPEND_CHANGE_PCT} subtitle="vs prev month" />
         <KPICard title="Conversions" value={fmt(k?.CURRENT_CONVERSIONS || 0)} change={k?.CONVERSIONS_CHANGE_PCT} subtitle="vs prev month" />
-        <KPICard title="Revenue" value={fmtMoney(k?.CURRENT_REVENUE || 0)} change={k?.REVENUE_CHANGE_PCT} subtitle="vs prev month" />
+        <KPICard title="Revenue" value={money(k?.CURRENT_REVENUE || 0)} change={k?.REVENUE_CHANGE_PCT} subtitle="vs prev month" />
         <KPICard
           title="Blended ROAS"
           value={`${k?.CURRENT_ROAS || 0}x`}
@@ -105,7 +128,7 @@ export default function Dashboard() {
                 tick={{ fill: '#4A4A4A', fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(v: number) => `€${(v / 1000).toFixed(0)}K`}
+                tickFormatter={axisFmt}
               />
               <Tooltip content={<ChartTooltip />} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
@@ -157,7 +180,7 @@ export default function Dashboard() {
                     <div className="w-2.5 h-2.5 rounded-full" style={{ background: entry.color }} />
                     <span className="text-[#808080]">{entry.name}</span>
                   </div>
-                  <span className="text-white font-medium">{pct}% · {fmtMoney(entry.value)}</span>
+                  <span className="text-white font-medium">{pct}% · {money(entry.value)}</span>
                 </div>
               );
             })}
@@ -201,7 +224,7 @@ export default function Dashboard() {
                 <div key={f.CHANNEL} className="space-y-1.5">
                   <div className="flex justify-between text-xs">
                     <span style={{ color: CHANNEL_COLORS[f.CHANNEL] }} className="font-medium">{f.CHANNEL}</span>
-                    <span className="text-[var(--color-text-muted)]">AOV: €{f.AVG_ORDER_VALUE}</span>
+                    <span className="text-[var(--color-text-muted)]">AOV: {money(f.AVG_ORDER_VALUE)}</span>
                   </div>
                   <div className="relative h-8 rounded-lg overflow-hidden" style={{ background: 'var(--color-surface)' }}>
                     <div className="absolute inset-y-0 left-0 rounded-lg" style={{
